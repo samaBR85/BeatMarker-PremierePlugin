@@ -1,29 +1,29 @@
 # UXP Plugin Development — Reference Bible
 
-> Guia de referência técnica baseado no desenvolvimento do BeatMarker, um plugin UXP para Adobe Premiere Pro. Tudo aqui foi **confirmado em produção** — não é documentação oficial, é o que realmente funciona.
+> Technical reference based on the development of BeatMarker, a UXP plugin for Adobe Premiere Pro. Everything here has been **confirmed in production** — this is not official documentation, it's what actually works.
 
 ---
 
-## 1. O que é UXP
+## 1. What is UXP
 
-**Unified Extensibility Platform** — o runtime moderno da Adobe para plugins em Premiere Pro, Photoshop, InDesign e outros apps. Substitui o CEP (Chrome Embedded Framework) e o ExtendScript.
+**Unified Extensibility Platform** — Adobe's modern runtime for plugins in Premiere Pro, Photoshop, InDesign and other apps. Replaces CEP (Chrome Embedded Framework) and ExtendScript.
 
-- Baseado em um runtime JavaScript proprietário (não é V8, não é Node.js completo)
-- Suporta HTML + CSS + JS vanilla para UI
-- Acessa APIs nativas do app via módulos específicos (`premierepro`, `photoshop`, etc.)
-- Empacotado como `.ccx` para distribuição
+- Based on a proprietary JavaScript runtime (not V8, not full Node.js)
+- Supports HTML + CSS + vanilla JS for UI
+- Accesses native app APIs via specific modules (`premierepro`, `photoshop`, etc.)
+- Distributed as `.ccx` files
 
-> ⚠️ **Nunca use documentação CEP ou ExtendScript como referência** — as APIs são completamente diferentes.
+> ⚠️ **Never use CEP or ExtendScript documentation as reference** — the APIs are completely different.
 
 ---
 
-## 2. Manifest (formato exato)
+## 2. Manifest (exact format)
 
 ```json
 {
   "manifestVersion": 5,
-  "id": "com.seudominio.seuplugin",
-  "name": "NomeDoPlugin",
+  "id": "com.yourdomain.yourplugin",
+  "name": "PluginName",
   "version": "1.0.0",
   "main": "index.html",
   "host": {
@@ -40,8 +40,8 @@
   "entrypoints": [
     {
       "type": "panel",
-      "id": "meu-panel",
-      "label": "Meu Plugin",
+      "id": "my-panel",
+      "label": "My Plugin",
       "minimumSize": { "width": 220, "height": 200 },
       "maximumSize": { "width": 2000, "height": 2000 },
       "preferredDockedSize":   { "width": 260, "height": 400 },
@@ -51,56 +51,56 @@
 }
 ```
 
-### Armadilhas do manifest
+### Manifest pitfalls
 
-| ❌ Errado | ✅ Correto |
+| ❌ Wrong | ✅ Correct |
 |---|---|
-| `"app": "PPRO"` | `"app": "premierepro"` (minúsculo) |
-| `"host": [{ ... }]` | `"host": { ... }` (objeto, não array) |
-| sem `"main"` | `"main": "index.html"` obrigatório |
-| sem `launchProcess` | necessário para `shell.openExternal()` |
-| sem `localFileSystem` | necessário para `fs.readFile()` |
+| `"app": "PPRO"` | `"app": "premierepro"` (lowercase) |
+| `"host": [{ ... }]` | `"host": { ... }` (object, not array) |
+| missing `"main"` | `"main": "index.html"` is required |
+| missing `launchProcess` | required for `shell.openExternal()` |
+| missing `localFileSystem` | required for `fs.readFile()` |
 
 ---
 
-## 3. O que existe e o que NÃO existe no UXP
+## 3. What exists and what does NOT exist in UXP
 
-### ✅ Existe
+### ✅ Available
 
 ```js
-require('premierepro')         // API do Premiere Pro
-require('fs')                  // filesystem — apenas Promise-based
-require('uxp')                 // APIs UXP (shell, storage, etc.)
-require('uxp').shell.openExternal('https://...')  // abrir links externos
-navigator.language             // locale do sistema
-fetch('https://...')           // requisições HTTP (não file://)
-TextDecoder / TextEncoder      // disponível
-BigInt                         // disponível
+require('premierepro')         // Premiere Pro API
+require('fs')                  // filesystem — Promise-based only
+require('uxp')                 // UXP APIs (shell, storage, etc.)
+require('uxp').shell.openExternal('https://...')  // open external links
+navigator.language             // system locale
+fetch('https://...')           // HTTP requests (not file://)
+TextDecoder / TextEncoder      // available
+BigInt                         // available
 ```
 
-### ❌ NÃO existe
+### ❌ NOT available
 
 ```js
 new Worker(...)                // typeof Worker === 'undefined'
 AudioContext / webkitAudioContext
 require('child_process')
-fs.readFileSync                // "Route not found" — usar fs.readFile (async)
-fetch('file://...')            // bloqueado pelo sandbox
-WebAssembly com pthreads       // crasha o app host imediatamente
-SharedArrayBuffer              // não disponível
-uxp.versions                   // retorna {} — inútil para detectar versão
+fs.readFileSync                // "Route not found" — use async fs.readFile
+fetch('file://...')            // blocked by sandbox
+WebAssembly with pthreads      // crashes the host app immediately
+SharedArrayBuffer              // not available
+uxp.versions                   // returns {} — useless for version detection
 ```
 
-### ⚠️ Existe mas com comportamento diferente
+### ⚠️ Available but with different behavior
 
 ```js
-// CSS variables às vezes não resolvem para background-color
-// Use inline styles para cores críticas:
+// CSS variables sometimes don't resolve for background-color
+// Use inline styles for critical colors:
 element.style.backgroundColor = '#027aff'; // ✅
-// em vez de: background-color: var(--accent); // ⚠️ pode não funcionar
+// instead of: background-color: var(--accent); // ⚠️ may not work
 
-// fs.readFile retorna um ArrayBuffer proxy, não nativo
-// Sempre copiar para ArrayBuffer nativo antes de processar:
+// fs.readFile returns a UXP proxy ArrayBuffer, not a native one
+// Always copy to a native ArrayBuffer before processing:
 const raw = await fs.readFile(path);
 const buf = new ArrayBuffer(raw.byteLength ?? raw.length);
 new Uint8Array(buf).set(new Uint8Array(raw));
@@ -113,97 +113,97 @@ new Uint8Array(buf).set(new Uint8Array(raw));
 ```js
 const fs = require('fs');
 
-// Leitura — SEMPRE async, NUNCA readFileSync
-const raw = await fs.readFile('/caminho/absoluto/arquivo.wav');
+// Reading — ALWAYS async, NEVER readFileSync
+const raw = await fs.readFile('/absolute/path/to/file.wav');
 
-// raw é um ArrayBuffer proxy do UXP — copiar para nativo antes de processar
+// raw is a UXP proxy ArrayBuffer — copy to native before processing
 const byteLength = raw.byteLength ?? raw.length;
 const nativeBuffer = new ArrayBuffer(byteLength);
 new Uint8Array(nativeBuffer).set(new Uint8Array(raw));
 
-// Escrita
-await fs.writeFile('/caminho/arquivo.json', JSON.stringify(data));
+// Writing
+await fs.writeFile('/path/to/file.json', JSON.stringify(data));
 ```
 
-Requer no manifest:
+Required in manifest:
 ```json
 "requiredPermissions": { "localFileSystem": "fullAccess" }
 ```
 
 ---
 
-## 5. APIs do Premiere Pro
+## 5. Premiere Pro APIs
 
-### Projeto e seleção
+### Project and selection
 
 ```js
 const ppro = require('premierepro');
 
 const project = await ppro.Project.getActiveProject();
-if (!project) throw new Error('Nenhum projeto aberto.');
+if (!project) throw new Error('No project open.');
 
 const selection = await ppro.ProjectUtils.getSelection(project);
 const items = await selection.getItems();  // ProjectItem[]
 
 const clipItem = items[0];
-// clipItem.type === 1  →  clip de mídia
-// clipItem.type === 2  →  bin/pasta
-// clipItem.name        →  nome do item
+// clipItem.type === 1  →  media clip
+// clipItem.type === 2  →  bin/folder
+// clipItem.name        →  item name
 
-// OBRIGATÓRIO antes de acessar markers no source:
+// REQUIRED before accessing source markers:
 const clipPI = ppro.ClipProjectItem.cast(clipItem);
 const mediaPath = await clipPI.getMediaFilePath();
 ```
 
-### Markers no source (ClipProjectItem)
+### Source markers (ClipProjectItem)
 
 ```js
-// Sempre fazer cast antes — getMarkers(projectItem) direto retorna null
+// Always cast first — getMarkers(projectItem) directly returns null
 const clipPI = ppro.ClipProjectItem.cast(projectItem);
 const clipMarkers = await ppro.Markers.getMarkers(clipPI);
 
-// Ler markers existentes
+// Read existing markers
 const allMarkers = await clipMarkers.getMarkers(); // Marker[]
 
-// Filtrar por prefixo (padrão recomendado para identificar markers do plugin)
-const myMarkers = allMarkers.filter(m => m.getName().startsWith('[MEU_PLUGIN]'));
+// Filter by prefix (recommended pattern to identify plugin markers)
+const myMarkers = allMarkers.filter(m => m.getName().startsWith('[MY_PLUGIN]'));
 ```
 
-### Criar markers via transaction
+### Create markers via transaction
 
 ```js
 await project.executeTransaction(async (ca) => {
   ca.addAction(clipMarkers.createAddMarkerAction(
-    '[MEU_PLUGIN] label',              // nome
-    'Comment',                         // tipo: 'Comment' | 'Chapter' | 'Segmentation' | 'WebLink'
-    ppro.TickTime.createWithSeconds(t), // posição (segundos)
-    ppro.TickTime.createWithSeconds(0), // duração (0 = marker de ponto)
-    'meu-plugin-guid'                   // guid/tag — string livre
+    '[MY_PLUGIN] label',               // name
+    'Comment',                         // type: 'Comment' | 'Chapter' | 'Segmentation' | 'WebLink'
+    ppro.TickTime.createWithSeconds(t), // position (seconds)
+    ppro.TickTime.createWithSeconds(0), // duration (0 = point marker)
+    'my-plugin-guid'                    // guid/tag — free string
   ));
-}, 'Undo label aqui');
+}, 'Undo label here');
 ```
 
-### Colorir markers
+### Color markers
 
 ```js
 await project.executeTransaction(async (ca) => {
   ca.addAction(marker.createSetColorByIndexAction(colorIndex));
-  // ❌ NÃO usar: createSetColorIndexAction (não existe)
+  // ❌ Do NOT use: createSetColorIndexAction (does not exist)
 }, 'Undo label');
 ```
 
-### Renomear markers
+### Rename markers
 
 ```js
 if (typeof marker.createSetNameAction === 'function') {
-  ca.addAction(marker.createSetNameAction('novo nome'));
+  ca.addAction(marker.createSetNameAction('new name'));
 }
 ```
 
-### Deletar markers
+### Delete markers
 
 ```js
-// Tentar múltiplos métodos — a API muda entre versões do Premiere
+// Try multiple methods — the API changes between Premiere versions
 const getDeleteAction = (collection, marker) => {
   if (typeof marker.createDeleteMarkerAction     === 'function') return marker.createDeleteMarkerAction();
   if (typeof marker.createRemoveMarkerAction     === 'function') return marker.createRemoveMarkerAction();
@@ -213,30 +213,30 @@ const getDeleteAction = (collection, marker) => {
 };
 ```
 
-### Getters do objeto Marker
+### Marker object getters
 
 ```js
-// Sempre usar os métodos getter — propriedades diretas retornam undefined
+// Always use getter methods — direct properties return undefined
 marker.getName()        // ✅    marker.name        // ❌ undefined
 marker.getColorIndex()  // ✅    marker.colorIndex  // ❌ undefined
 marker.getStart()       // ✅  → TickTime
 marker.getDuration()    // ✅  → TickTime
 marker.getComments()    // ✅
 
-// TickTime → segundos
-const ticks = marker.getStart().ticks; // BigInt
-// Comparar TickTimes com segurança:
+// TickTime → ticks (BigInt)
+const ticks = marker.getStart().ticks;
+// Sort markers safely:
 .sort((a, b) => {
   try { return Number(BigInt(a.getStart().ticks) - BigInt(b.getStart().ticks)); }
   catch { return 0; }
 });
 ```
 
-### Transactions — regras importantes
+### Transactions — important rules
 
 ```js
-// Máximo ~50 actions por executeTransaction — mais que isso pode travar
-// Sempre usar lotes (batches):
+// Maximum ~50 actions per executeTransaction — more may hang
+// Always use batches:
 const BATCH = 50;
 for (let b = 0; b < items.length; b += BATCH) {
   const slice = items.slice(b, b + BATCH);
@@ -244,65 +244,65 @@ for (let b = 0; b < items.length; b += BATCH) {
     for (const item of slice) {
       ca.addAction(/* ... */);
     }
-  }, 'Descrição para o painel Undo — ' + (b / BATCH + 1));
+  }, 'Undo description — batch ' + (b / BATCH + 1));
 }
 ```
 
-### Cores nativas do Premiere (colorIndex)
+### Premiere native colors (colorIndex)
 
-| Index | Cor      | Hex aproximado |
-|-------|----------|----------------|
-| 0     | Verde    | `#4aad4a`      |
-| 1     | Vermelho | `#d53a3a`      |
-| 2     | Roxo     | `#a06db5`      |
-| 3     | Laranja  | `#e8832a`      |
-| 4     | Amarelo  | `#d4a017`      |
-| 5     | Branco   | `#d0d0d0`      |
-| 6     | Azul     | `#4084e5`      |
-| 7     | Ciano    | `#1ab3a6`      |
+| Index | Color  | Approx hex |
+|-------|--------|------------|
+| 0     | Green  | `#4aad4a`  |
+| 1     | Red    | `#d53a3a`  |
+| 2     | Purple | `#a06db5`  |
+| 3     | Orange | `#e8832a`  |
+| 4     | Yellow | `#d4a017`  |
+| 5     | White  | `#d0d0d0`  |
+| 6     | Blue   | `#4084e5`  |
+| 7     | Cyan   | `#1ab3a6`  |
 
 ---
 
-## 6. Links externos
+## 6. External links
 
 ```js
-// Requer launchProcess no manifest
+// Requires launchProcess in manifest
 require('uxp').shell.openExternal('https://github.com/samaBR85');
 ```
 
 ---
 
-## 7. Internacionalização (i18n)
+## 7. Internationalization (i18n)
 
 ```js
-// Detectar idioma do sistema
+// Detect system language
 const LANG = (navigator.language || 'en').startsWith('pt') ? 'pt' : 'en';
 
 const T = {
   pt: {
-    btnAnalyze: 'ANALISAR CLIPE',
-    statusDone: 'Análise concluída ✓',
+    btnAnalyze:   'ANALISAR CLIPE',
+    statusDone:   'Análise concluída ✓',
     errNoProject: 'Nenhum projeto aberto.',
     // ...
   },
   en: {
-    btnAnalyze: 'ANALYZE CLIP',
-    statusDone: 'Analysis complete ✓',
+    btnAnalyze:   'ANALYZE CLIP',
+    statusDone:   'Analysis complete ✓',
     errNoProject: 'No project open.',
     // ...
   },
 }[LANG];
 
-// Uso
+// Usage
 btnAnalyze.textContent = T.btnAnalyze;
 setStatus(T.statusDone, 'ok');
 ```
 
 ---
 
-## 8. Bundling com esbuild (para código fora do UXP)
+## 8. Bundling with esbuild (for code using npm packages)
 
-Quando usar bibliotecas npm que dependem de módulos Node.js ausentes no UXP, usar esbuild com stubs:
+When using npm libraries that depend on Node.js modules missing in UXP, use esbuild with stubs:
 
 ### build.js
 
@@ -311,29 +311,29 @@ const esbuild = require('esbuild');
 const path = require('path');
 
 esbuild.build({
-  entryPoints: ['src/meu-entry.js'],
+  entryPoints: ['src/my-entry.js'],
   bundle: true,
   format: 'cjs',
   platform: 'node',
-  outfile: 'meu-bundle.js',
+  outfile: 'my-bundle.js',
   inject: [path.resolve(__dirname, 'src/stubs/globals.js')],
   alias: {
-    'url':              path.resolve(__dirname, 'src/stubs/url.js'),
-    'vm':               path.resolve(__dirname, 'src/stubs/vm.js'),
-    'worker_threads':   path.resolve(__dirname, 'src/stubs/worker_threads.js'),
-    '@eshaz/web-worker':path.resolve(__dirname, 'src/stubs/web-worker.js'),
+    'url':               path.resolve(__dirname, 'src/stubs/url.js'),
+    'vm':                path.resolve(__dirname, 'src/stubs/vm.js'),
+    'worker_threads':    path.resolve(__dirname, 'src/stubs/worker_threads.js'),
+    '@eshaz/web-worker': path.resolve(__dirname, 'src/stubs/web-worker.js'),
   },
   define: { 'process.env.NODE_ENV': '"production"' },
 });
 ```
 
-### Stubs necessários
+### Required stubs
 
-**globals.js** — polyfills injetados globalmente:
+**globals.js** — globally injected polyfills:
 ```js
 if (typeof TextDecoder === 'undefined') {
   globalThis.TextDecoder = class TextDecoder {
-    decode(buffer) { /* implementação simples */ }
+    decode(buffer) { /* simple implementation */ }
   };
 }
 if (typeof TextEncoder === 'undefined') {
@@ -343,18 +343,18 @@ if (typeof TextEncoder === 'undefined') {
 }
 ```
 
-**url.js** — módulo `url` do Node.js:
+**url.js** — Node.js `url` module:
 ```js
 export const pathToFileURL = p => p;
 export const fileURLToPath = p => p;
 ```
 
-**vm.js** — módulo `vm` do Node.js:
+**vm.js** — Node.js `vm` module:
 ```js
 export const runInNewContext = (code, ctx) => eval(code);
 ```
 
-**worker_threads.js** — módulo `worker_threads`:
+**worker_threads.js** — `worker_threads` module:
 ```js
 export default {};
 export const isMainThread = true;
@@ -372,29 +372,29 @@ export default class FakeWorker {
 
 ---
 
-## 9. Decodificação de áudio em JS puro
+## 9. Pure JS audio decoding
 
-### Por que JS puro
+### Why pure JS
 
-| Tecnologia | Problema no UXP |
+| Technology | Problem in UXP |
 |---|---|
-| WASM com pthreads | Crasha o app host imediatamente |
-| `mpg123-decoder` | Usa WASM → crash |
-| `AudioContext.decodeAudioData` | Não existe no UXP |
+| WASM with pthreads | Crashes the host app immediately |
+| `mpg123-decoder` | Uses WASM → crash |
+| `AudioContext.decodeAudioData` | Does not exist in UXP |
 | Web Workers | `typeof Worker === 'undefined'` |
 
-### Decoder WAV
+### WAV decoder
 
 ```js
 function decodeWav(arrayBuffer) {
   const view = new DataView(arrayBuffer);
 
-  // Validar RIFF/WAVE
+  // Validate RIFF/WAVE
   const riff = String.fromCharCode(view.getUint8(0),view.getUint8(1),view.getUint8(2),view.getUint8(3));
   const wave = String.fromCharCode(view.getUint8(8),view.getUint8(9),view.getUint8(10),view.getUint8(11));
-  if (riff !== 'RIFF' || wave !== 'WAVE') throw new Error('Arquivo WAV inválido');
+  if (riff !== 'RIFF' || wave !== 'WAVE') throw new Error('Invalid WAV file');
 
-  // Percorrer chunks
+  // Walk chunks
   let offset = 12, audioFormat, numChannels, sampleRate, bitsPerSample, dataOffset, dataSize;
   while (offset < arrayBuffer.byteLength - 8) {
     const id   = String.fromCharCode(view.getUint8(offset),view.getUint8(offset+1),view.getUint8(offset+2),view.getUint8(offset+3));
@@ -434,15 +434,17 @@ function decodeWav(arrayBuffer) {
 }
 ```
 
-### Resample (normalizar para 44100 Hz)
+### Resample (normalize to 44100 Hz)
+
+`music-tempo` has internal parameters calibrated for 44100 Hz — always normalize before passing audio data.
 
 ```js
 const TARGET_SR = 44100;
 
 function resample(mono, srcRate) {
   if (srcRate === TARGET_SR) return mono;
-  const ratio  = srcRate / TARGET_SR;
-  const out    = new Float32Array(Math.floor(mono.length / ratio));
+  const ratio = srcRate / TARGET_SR;
+  const out   = new Float32Array(Math.floor(mono.length / ratio));
   for (let i = 0; i < out.length; i++) {
     const pos  = i * ratio;
     const idx  = Math.floor(pos);
@@ -455,69 +457,69 @@ function resample(mono, srcRate) {
 
 ---
 
-## 10. Empacotamento e distribuição
+## 10. Packaging and distribution
 
-### Desenvolvimento (UXP Developer Tool)
+### Development (UXP Developer Tool)
 
-1. Abrir o **UXP Developer Tool**
-2. **Add Plugin** → selecionar `manifest.json`
-3. **Load** no app Adobe
+1. Open the **UXP Developer Tool**
+2. **Add Plugin** → select `manifest.json`
+3. **Load** in the Adobe app
 
-### Distribuição como `.ccx`
+### Distribution as `.ccx`
 
-1. No UDT: **`...` → Package** na entrada do plugin
-2. Gera `NomePlugin.ccx`
-3. Instalação: **duplo clique** no `.ccx` com o Premiere fechado
+1. In UDT: **`...` → Package** on the plugin entry
+2. Generates `PluginName.ccx`
+3. Installation: **double-click** the `.ccx` with Premiere closed
 
-### Adobe Exchange (marketplace oficial)
+### Adobe Exchange (official marketplace)
 
 1. [developer.adobe.com/console](https://developer.adobe.com/console)
 2. **New project → Add UXP Plugin**
-3. Upload do `.ccx` + ícone 512×512px + screenshots + política de privacidade
-4. Revisão Adobe (~dias a 2 semanas)
+3. Upload `.ccx` + 512×512px icon + screenshots + privacy policy
+4. Adobe review (~days to 2 weeks)
 
 ---
 
-## 11. Boas práticas
+## 11. Best practices
 
 ### UI
 
-- Use `id` únicos e descritivos nos elementos HTML
-- Textos da UI via JS (não hardcoded no HTML) para facilitar i18n
-- Spinner inline durante operações longas: `btn.innerHTML = '<span class="spinner"></span>PROCESSANDO...'`
-- Restaurar texto do botão no `finally` do try/catch
-- `user-select: none` no body — evita seleção acidental de texto
+- Use unique, descriptive `id` attributes on HTML elements
+- Set UI text via JS (not hardcoded in HTML) to support i18n
+- Show inline spinner during long operations: `btn.innerHTML = '<span class="spinner"></span>PROCESSING...'`
+- Always restore button text in the `finally` block
+- Set `user-select: none` on body — prevents accidental text selection
 
-### Transações
+### Transactions
 
-- Sempre usar `executeTransaction` para qualquer escrita na API do Premiere
-- Máximo 50 actions por transaction
-- Sempre passar um label descritivo (aparece no painel Undo do Premiere)
-- Nunca modificar a API fora de uma transaction
+- Always use `executeTransaction` for any write to the Premiere API
+- Maximum 50 actions per transaction
+- Always pass a descriptive label (shown in Premiere's Undo panel)
+- Never modify the API outside a transaction
 
-### Erros
+### Error handling
 
-- Sempre envolver chamadas de API em try/catch
-- Restaurar estado da UI no `finally` (botões, progress bar)
-- Logar erros com mensagem clara — o usuário não vê o console
+- Always wrap API calls in try/catch
+- Restore UI state in `finally` (buttons, progress bar)
+- Log errors with clear messages — the user cannot see the browser console
 
 ### Performance
 
-- Operações pesadas (decode de áudio, análise) bloqueiam a UI — dar feedback visual antes de iniciar
-- Liberar referências a ArrayBuffers grandes após o uso
-- `analyzeAudio` pode levar alguns segundos para arquivos grandes — comunicar isso na UI
+- Heavy operations (audio decode, analysis) block the UI — always show visual feedback before starting
+- Release references to large ArrayBuffers after use
+- For large files, analysis can take several seconds — communicate this clearly in the UI
 
 ---
 
-## 12. Checklist pré-release
+## 12. Pre-release checklist
 
-- [ ] `"app": "premierepro"` em minúsculo no manifest
-- [ ] `"host"` é objeto, não array
-- [ ] `"main": "index.html"` presente
-- [ ] Permissões necessárias declaradas em `requiredPermissions`
-- [ ] ID do plugin único (`com.seudominio.seuplugin`)
-- [ ] Versão semântica no manifest (`1.0.0`)
-- [ ] Testado no Windows e macOS
-- [ ] Sem `console.log` desnecessários em produção
-- [ ] Mensagens de erro úteis para o usuário final
-- [ ] Bundle pré-compilado incluído na pasta do plugin
+- [ ] `"app": "premierepro"` lowercase in manifest
+- [ ] `"host"` is an object, not an array
+- [ ] `"main": "index.html"` present
+- [ ] Required permissions declared in `requiredPermissions`
+- [ ] Unique plugin ID (`com.yourdomain.yourplugin`)
+- [ ] Semantic version in manifest (`1.0.0`)
+- [ ] Tested on Windows and macOS
+- [ ] No unnecessary `console.log` in production
+- [ ] User-facing error messages are clear and actionable
+- [ ] Pre-compiled bundle included in the plugin folder
