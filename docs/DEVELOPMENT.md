@@ -596,16 +596,30 @@ await project.executeTransaction(async (ca) => {
 });
 ```
 
-### Read marker name for beat position — not loop index
+### Marker name stores global beat index — not position
 
-After selective marker creation (e.g. only beats 1 and 3), the marker index no longer maps to beat position. Always derive position from the marker name:
+Marker names store the **global beat index** (position in the original `beats` array), not the beat position (1–4). This allows correct recoloring for any offset and any active beat combination.
 
 ```js
-// ❌ Wrong after selective creation:
-const beatPos = ((b + i) % 4) + 1;
+// Creation — store global index:
+ca.addAction(clipMarkers.createAddMarkerAction('[BM] ' + globalIdx, ...));
 
-// ✅ Correct — reads the name set at creation time:
-const beatPos = parseInt(marker.getName().replace('[BM] ', '')) || 1;
+// Recoloring (all 4 beats active) — derive position from index + offset:
+const globalIdx = parseInt(marker.getName().replace('[BM] ', '')) || 0;
+const beatPos = ((globalIdx + offset) % 4) + 1;
+```
+
+#### Phase shift with selective beats — cycle colors, don't recreate
+
+When fewer than 4 beats are active, recoloring by globalIdx+offset causes the pattern to alternate between correct colors and all-blue (mathematically expected but confusing UX). The fix: cycle through the sorted active beats by marker index:
+
+```js
+// ✅ Selective beats — cycle within active set only:
+const sortedActiveBeats = [...activeBeats].sort((a, b) => a - b);
+const beatPos = sortedActiveBeats[(markerSortedIndex + offset) % sortedActiveBeats.length];
+
+// ❌ Don't use globalIdx for selective — causes "all blue" every other click:
+const beatPos = ((globalIdx + offset) % 4) + 1;
 ```
 - [ ] User-facing error messages are clear and actionable
 - [ ] Pre-compiled bundle included in the plugin folder
