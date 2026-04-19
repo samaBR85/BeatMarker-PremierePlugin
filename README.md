@@ -1,5 +1,7 @@
 # 🥁 BeatMarker
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 **Plugin UXP para Adobe Premiere Pro** que detecta automaticamente as batidas de uma trilha de áudio e cria markers coloridos no source do clipe — dando ao editor uma referência visual rítmica precisa para cortes sincronizados com a música.
 
 > **Beat detection plugin for Adobe Premiere Pro** — automatically analyzes audio and creates colored beat markers on the source clip for music-synced editing.
@@ -147,7 +149,12 @@ beatmarker-plugin/
 
 ---
 
-## 📄 Licenças de terceiros / Third-party licenses
+## 📄 Licença / License
+
+Este projeto é distribuído sob a licença **GNU GPL v3** — qualquer derivado deve ser igualmente open source.  
+*This project is licensed under **GNU GPL v3** — any derivative work must also be open source.*
+
+### Licenças de terceiros / Third-party licenses
 
 - [music-tempo](https://github.com/killiansheriff/music-tempo) — MIT
 - [js-mp3](https://github.com/nicktindall/js-mp3) — MIT
