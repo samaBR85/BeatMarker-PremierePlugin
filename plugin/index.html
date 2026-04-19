@@ -260,22 +260,22 @@
   <div class="header">
     <div>
       <span class="header-title">BEAT MARKER <span style="font-weight:400;color:#666;">v1.0</span></span>
-      <div style="font-size:9px;color:#555;margin-top:2px;">criado por <span id="link-sama" style="color:#027aff;cursor:pointer;">samaBR</span></div>
+      <div style="font-size:9px;color:#555;margin-top:2px;"><span id="created-by">created by</span> <span id="link-sama" style="color:#027aff;cursor:pointer;">samaBR</span></div>
     </div>
     <div class="status-dot"></div>
   </div>
 
   <!-- Clip info -->
   <div class="clip-box">
-    <span id="clip-name">Selecione um clip .WAV no painel do projeto</span>
-    <span id="clip-hint" style="font-size:11px;color:#666;text-align:center;">e clique em ANALISAR CLIPE SELECIONADO</span>
+    <span id="clip-name">Select a .WAV clip in the Project panel</span>
+    <span id="clip-hint" style="font-size:11px;color:#666;text-align:center;">then click ANALYZE SELECTED CLIP</span>
     <span id="clip-sub" style="display:none;"></span>
   </div>
 
   <!-- BPM -->
   <div class="bpm-display">
     <div id="bpm-val">--</div>
-    <div class="bpm-label">BPM · 4/4</div>
+    <div class="bpm-label" id="bpm-label">BPM · 4/4</div>
   </div>
 
   <!-- Beat grid com ◀ ▶ -->
@@ -292,16 +292,16 @@
   <div id="progress-wrap"><div id="progress-bar"></div></div>
 
   <!-- Botões de ação -->
-  <button class="btn btn-primary" id="btn-analyze">ANALISAR CLIPE SELECIONADO</button>
-  <button class="btn btn-success" id="btn-apply" disabled>CRIAR MARKERS NO CLIPE</button>
-  <button class="btn" id="btn-clear-markers">REMOVER MARKERS</button>
+  <button class="btn btn-primary" id="btn-analyze">ANALYZE SELECTED CLIP</button>
+  <button class="btn btn-success" id="btn-apply" disabled>CREATE MARKERS ON CLIP</button>
+  <button class="btn" id="btn-clear-markers">REMOVE MARKERS</button>
 
   <!-- Log toggle + log -->
-  <button id="btn-log-toggle">mostrar log ▾</button>
+  <button id="btn-log-toggle">show log ▾</button>
   <div id="log"></div>
 
   <!-- Status line -->
-  <div id="status">Pronto</div>
+  <div id="status">Ready</div>
 
   <div class="footer">
     <span id="footer-versions">Adobe Premiere Pro · Plugin UXP</span>
