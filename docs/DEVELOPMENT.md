@@ -540,6 +540,73 @@ function resample(mono, srcRate) {
 - [ ] Semantic version in manifest (`1.0.0`)
 - [ ] Tested on Windows and macOS
 - [ ] No unnecessary `console.log` in production
+
+---
+
+## 13. CSS pitfalls discovered in v1.1
+
+### ID selector `!important` beats class selector `!important`
+
+When both an ID rule and a class rule use `!important`, the ID rule wins due to specificity — even if the class is toggled dynamically later:
+
+```css
+/* WON'T override #b1's color: */
+#b1 { background-color: #d53a3a !important; }        /* ID — wins */
+.beat-box.inactive { background-color: #3a3a3a !important; } /* class — loses */
+```
+
+**Solution:** use inline styles for dynamic state:
+
+```js
+el.style.backgroundColor = isActive ? '#d53a3a' : '#3a3a3a';
+el.style.color            = isActive ? '#fff'    : '#555';
+// To restore original CSS: el.style.backgroundColor = '';
+```
+
+### Text descender clipping
+
+UXP can clip text descenders (tails of g, p, y, etc.) when `line-height` is tight. Always set `line-height: 1.5` or higher on italic or small text elements:
+
+```css
+#confidence-phrase { font-size: 11px; font-style: italic; line-height: 1.6; }
+```
+
+Adding `padding-bottom: 2px` on the element also helps as a safety margin.
+
+### Pre-filter before transactions — don't use `continue` inside callbacks
+
+Using `continue` to skip iterations inside `executeTransaction` async callbacks can be unreliable in UXP. Pre-filter arrays before the loop instead:
+
+```js
+// ❌ Avoid:
+await project.executeTransaction(async (ca) => {
+  for (let i = 0; i < slice.length; i++) {
+    if (!activeBeats.has(beatPos)) continue;
+    ca.addAction(...);
+  }
+});
+
+// ✅ Reliable:
+const filtered = beats
+  .map((t, i) => ({ t, pos: ((i + offset) % 4) + 1 }))
+  .filter(({ pos }) => activeBeats.has(pos));
+
+await project.executeTransaction(async (ca) => {
+  for (const { t, pos } of filtered) ca.addAction(...);
+});
+```
+
+### Read marker name for beat position — not loop index
+
+After selective marker creation (e.g. only beats 1 and 3), the marker index no longer maps to beat position. Always derive position from the marker name:
+
+```js
+// ❌ Wrong after selective creation:
+const beatPos = ((b + i) % 4) + 1;
+
+// ✅ Correct — reads the name set at creation time:
+const beatPos = parseInt(marker.getName().replace('[BM] ', '')) || 1;
+```
 - [ ] User-facing error messages are clear and actionable
 - [ ] Pre-compiled bundle included in the plugin folder
 
