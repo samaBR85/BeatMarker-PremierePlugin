@@ -523,3 +523,51 @@ function resample(mono, srcRate) {
 - [ ] No unnecessary `console.log` in production
 - [ ] User-facing error messages are clear and actionable
 - [ ] Pre-compiled bundle included in the plugin folder
+
+---
+
+## v1.1 — New Features
+
+### BPM Confidence Indicator
+
+After analysis, a confidence score (0–100%) is calculated from the **coefficient of variation** of beat intervals:
+
+```js
+function calculateConfidence(beats) {
+  if (beats.length < 4) return 0;
+  const intervals = [];
+  for (let i = 1; i < beats.length; i++) intervals.push(beats[i] - beats[i - 1]);
+  const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+  const variance = intervals.reduce((a, b) => a + (b - mean) ** 2, 0) / intervals.length;
+  const cv = Math.sqrt(variance) / mean;
+  return Math.max(0, Math.min(100, Math.round((1 - cv / 0.2) * 100)));
+}
+```
+
+| Level  | Range  | Bar color  |
+|--------|--------|------------|
+| High   | >85%   | `#34c759`  |
+| Medium | 60–85% | `#d7ab2f`  |
+| Low    | <60%   | `#d53a3a`  |
+
+The UI shows a color-coded progress bar, a randomized phrase (Whiplash/music references, always in English), and a localized subtitle. Phrases and subtitles are stored in the `STRINGS` i18n object — only subtitles are translated; the quotes stay in English in both languages.
+
+### Beat Selection
+
+Users can toggle individual beats (1–4) on/off before creating markers.
+
+- `activeBeats` — a `Set<number>` initialized to `{1,2,3,4}`, minimum 1 active
+- Beat boxes are clickable toggles; inline styles handle the active/inactive visual state (CSS classes fail due to ID selector specificity — see DEVELOPMENT.md)
+- Beats are **pre-filtered before the transaction loop**:
+
+```js
+const beatsWithPos = beats
+  .map((t, i) => ({ t, pos: ((i + offset) % 4) + 1 }))
+  .filter(({ pos }) => activeBeats.has(pos));
+```
+
+- Marker coloring reads the marker **name** (e.g. `[BM] 1`) to determine beat position — not the loop index — ensuring correct colors regardless of which beats were created:
+
+```js
+const beatPos = parseInt(marker.getName().replace('[BM] ', '')) || 1;
+```
