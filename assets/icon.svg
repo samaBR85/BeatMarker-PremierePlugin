@@ -1,0 +1,82 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Fundo -->
+  <rect width="512" height="512" rx="80" fill="#1a1a1a"/>
+
+  <!-- Faixa de waveform (fundo azul escuro) -->
+  <rect x="40" y="140" width="432" height="200" rx="6" fill="#1a2a3a"/>
+
+  <!-- Waveform simulada com barras verticais -->
+  <g fill="#1e5080" opacity="0.9">
+    <rect x="48"  y="220" width="6" height="112"/>
+    <rect x="58"  y="200" width="6" height="132"/>
+    <rect x="68"  y="180" width="6" height="152"/>
+    <rect x="78"  y="210" width="6" height="122"/>
+    <rect x="88"  y="230" width="6" height="102"/>
+    <rect x="98"  y="195" width="6" height="137"/>
+    <rect x="108" y="215" width="6" height="117"/>
+    <rect x="118" y="175" width="6" height="157"/>
+    <rect x="128" y="205" width="6" height="127"/>
+    <rect x="138" y="220" width="6" height="112"/>
+    <rect x="148" y="190" width="6" height="142"/>
+    <rect x="158" y="210" width="6" height="122"/>
+    <rect x="168" y="185" width="6" height="147"/>
+    <rect x="178" y="225" width="6" height="107"/>
+    <rect x="188" y="200" width="6" height="132"/>
+    <rect x="198" y="170" width="6" height="162"/>
+    <rect x="208" y="215" width="6" height="117"/>
+    <rect x="218" y="235" width="6" height="97"/>
+    <rect x="228" y="195" width="6" height="137"/>
+    <rect x="238" y="180" width="6" height="152"/>
+    <rect x="248" y="210" width="6" height="122"/>
+    <rect x="258" y="225" width="6" height="107"/>
+    <rect x="268" y="190" width="6" height="142"/>
+    <rect x="278" y="205" width="6" height="127"/>
+    <rect x="288" y="175" width="6" height="157"/>
+    <rect x="298" y="220" width="6" height="112"/>
+    <rect x="308" y="200" width="6" height="132"/>
+    <rect x="318" y="185" width="6" height="147"/>
+    <rect x="328" y="215" width="6" height="117"/>
+    <rect x="338" y="230" width="6" height="102"/>
+    <rect x="348" y="195" width="6" height="137"/>
+    <rect x="358" y="210" width="6" height="122"/>
+    <rect x="368" y="180" width="6" height="152"/>
+    <rect x="378" y="220" width="6" height="112"/>
+    <rect x="388" y="200" width="6" height="132"/>
+    <rect x="398" y="190" width="6" height="142"/>
+    <rect x="408" y="215" width="6" height="117"/>
+    <rect x="418" y="235" width="6" height="97"/>
+    <rect x="428" y="205" width="6" height="127"/>
+    <rect x="438" y="185" width="6" height="147"/>
+    <rect x="448" y="220" width="6" height="112"/>
+    <rect x="458" y="200" width="6" height="132"/>
+  </g>
+
+  <!-- Faixa preta embaixo do waveform (onde ficam os markers) -->
+  <rect x="40" y="310" width="432" height="40" rx="0" fill="#111111"/>
+  <rect x="40" y="336" width="432" height="14" rx="0" fill="#0d0d0d"/>
+
+  <!-- Linha de playhead -->
+  <rect x="40" y="308" width="432" height="2" fill="#333"/>
+
+  <!-- Marker beat 1 — Vermelho (bandeirinha estilo Premiere) -->
+  <rect x="96" y="312" width="3" height="34" fill="#d53a3a"/>
+  <polygon points="99,312 115,312 115,326 99,326" fill="#d53a3a"/>
+
+  <!-- Marker beat 2 — Azul -->
+  <rect x="196" y="312" width="3" height="34" fill="#4084e5"/>
+  <polygon points="199,312 215,312 215,326 199,326" fill="#4084e5"/>
+
+  <!-- Marker beat 3 — Amarelo -->
+  <rect x="296" y="312" width="3" height="34" fill="#d4a017"/>
+  <polygon points="299,312 315,312 315,326 299,326" fill="#d4a017"/>
+
+  <!-- Marker beat 4 — Azul -->
+  <rect x="396" y="312" width="3" height="34" fill="#4084e5"/>
+  <polygon points="399,312 415,312 415,326 399,326" fill="#4084e5"/>
+
+  <!-- Texto BEATMARKER -->
+  <text x="256" y="420" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="52" font-weight="700" letter-spacing="3" fill="#ffffff">BEAT</text>
+  <text x="256" y="475" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="38" font-weight="700" letter-spacing="6" fill="#4084e5">MARKER</text>
+
+</svg>
