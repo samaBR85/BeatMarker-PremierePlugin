@@ -4,6 +4,9 @@
   "name": "BeatMarker",
   "version": "1.0.0",
   "main": "index.html",
+  "icons": [
+    { "width": 512, "height": 512, "path": "icon.png", "scale": [ 1, 2 ], "theme": [ "dark", "light", "all" ] }
+  ],
   "host": {
     "app": "premierepro",
     "minVersion": "25.0.0"
