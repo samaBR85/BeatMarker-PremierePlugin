@@ -1,0 +1,21 @@
+# Dependências
+node_modules/
+
+# Arquivos de áudio (binários grandes, não versionados)
+music_tracks/
+
+# Build intermediário dos experimentos (o output final fica em plugin/)
+experiments/exp-b-uxp-viability/analysis-bundle.js
+
+# Binários WASM dos experimentos (pesados, não necessários para o build)
+experiments/exp-b-uxp-viability/lib/
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

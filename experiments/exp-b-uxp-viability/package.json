@@ -1,0 +1,16 @@
+{
+  "name": "beatmarker-bundle",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build do analysis-bundle.js para o plugin BeatMarker",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "js-mp3": "^0.1.0",
+    "music-tempo": "*"
+  },
+  "devDependencies": {
+    "esbuild": "*"
+  }
+}

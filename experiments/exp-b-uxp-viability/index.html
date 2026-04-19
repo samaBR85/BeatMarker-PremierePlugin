@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BeatMarker — Exp B</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 12px;
+      margin: 0;
+      padding: 12px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+    }
+
+    h2 {
+      font-size: 13px;
+      color: #ffffff;
+      margin: 0 0 12px 0;
+    }
+
+    .test-block {
+      margin-bottom: 16px;
+    }
+
+    .test-block h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin: 0 0 6px 0;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      background: #0e639c;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      font-size: 12px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    button:hover { background: #1177bb; }
+    button:active { background: #0a4f7e; }
+
+    #log {
+      margin-top: 16px;
+      padding: 10px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      min-height: 160px;
+      max-height: 340px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .ok   { color: #4ec9b0; }
+    .fail { color: #f44747; }
+    .info { color: #9cdcfe; }
+    .sep  { color: #555; }
+
+    #btn-clear {
+      margin-top: 8px;
+      background: #3a3a3a;
+      font-size: 11px;
+      padding: 5px 10px;
+    }
+    #btn-clear:hover { background: #4a4a4a; }
+  </style>
+</head>
+<body>
+  <h2>Exp-B: Viabilidade UXP</h2>
+
+  <div class="test-block">
+    <h3>Teste 1 — Essentia.js WASM</h3>
+    <button id="btn-t1">Carregar Essentia.js</button>
+  </div>
+
+  <div class="test-block">
+    <h3>Teste 2 — Marker API</h3>
+    <button id="btn-t2">Criar marker colorido</button>
+  </div>
+
+  <div class="test-block">
+    <h3>Teste 3 — Leitura de arquivo</h3>
+    <button id="btn-t3">Ler arquivo de áudio (storage)</button>
+  </div>
+
+  <div class="test-block">
+    <h3>Teste 3b — Decodificação PCM</h3>
+    <button id="btn-t3b">Decodificar áudio (AudioContext)</button>
+  </div>
+
+  <div class="test-block">
+    <h3>Teste 4 — Importar beats JSON</h3>
+    <button id="btn-t4">Criar markers do JSON de beats</button>
+  </div>
+
+  <div class="test-block">
+    <h3>Teste 5 — Marker no Source (ProjectItem)</h3>
+    <button id="btn-t5">Criar marker no clipe selecionado</button>
+  </div>
+
+  <div class="test-block">
+    <h3>Teste 6 — Beat Detection dentro do UXP</h3>
+    <button id="btn-t6">Analisar clipe selecionado</button>
+  </div>
+
+  <div style="display:flex;gap:6px;margin-bottom:6px;">
+    <button id="btn-copy" style="flex:1;background:#3a3a3a;font-size:11px;padding:5px 10px;">Copiar log</button>
+    <button id="btn-clear" style="flex:1;background:#3a3a3a;font-size:11px;padding:5px 10px;">Limpar log</button>
+  </div>
+  <textarea id="log-text" spellcheck="false" style="display:none;margin-bottom:8px;width:100%;height:100px;background:#111;color:#d4d4d4;border:1px solid #555;font-family:'Courier New',monospace;font-size:10px;padding:6px;box-sizing:border-box;resize:vertical;"></textarea>
+  <div id="log"><span class="info">Aguardando testes...</span></div>
+
+  <script src="main.js"></script>
+</body>
+</html>

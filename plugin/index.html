@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    :root {
+      --bg-panel:   #222222;
+      --bg-surface: #2d2d2d;
+      --border:     #323232;
+      --accent:     #027aff;
+      --text-primary:   #e1e1e1;
+      --text-secondary: #a0a0a0;
+      --green:  #34c759;
+      --red:    #d53a3a;
+      --yellow: #d7ab2f;
+      --blue:   #4084e5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-panel);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', ui-sans-serif, sans-serif;
+      font-size: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      user-select: none;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--text-primary);
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    /* Clip box */
+    .clip-box {
+      background: #2d2d2d;
+      border: 1px solid #323232;
+      border-radius: 4px;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 60px;
+      text-align: center;
+    }
+    #clip-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #027aff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+      text-align: center;
+    }
+    #clip-sub {
+      font-size: 11px;
+      color: #a0a0a0;
+    }
+
+    /* BPM display */
+    .bpm-display {
+      text-align: center;
+      line-height: 1;
+    }
+    #bpm-val {
+      font-size: 36px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+    .bpm-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Beat grid */
+    .beat-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .beat-box {
+      width: 36px; height: 36px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+    #b1 { background-color: #d53a3a !important; }
+    #b2 { background-color: #4084e5 !important; }
+    #b3 { background-color: #d7ab2f !important; }
+    #b4 { background-color: #4084e5 !important; }
+
+    /* Botões */
+    .btn {
+      width: 100%;
+      padding: 9px 0;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      color: #fff;
+      background: #3e3e3e;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn:hover:not(:disabled) { background: #4e4e4e; }
+    .btn:disabled { opacity: 0.35; cursor: default; }
+    .btn-primary { background: var(--accent); }
+    .btn-primary:hover:not(:disabled) { background: #0267d6; }
+    .btn-success { background: #2d7a31; }
+    .btn-success:hover:not(:disabled) { background: #39973e; }
+
+    .btn-adj {
+      width: 32px; height: 36px;
+      border: none;
+      border-radius: 4px;
+      background: #3a3a3a;
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .btn-adj:hover:not(:disabled) { background: #505050; }
+    .btn-adj:disabled { opacity: 0.3; cursor: default; }
+
+    /* Progress bar */
+    #progress-wrap {
+      display: none;
+      width: 100%;
+      height: 3px;
+      background: #333;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    #progress-wrap.visible { display: block; }
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      animation: indeterminate 1.2s ease-in-out infinite;
+      transform-origin: left;
+    }
+    @keyframes indeterminate {
+      0%   { width: 0%;   margin-left: 0%; }
+      50%  { width: 60%;  margin-left: 20%; }
+      100% { width: 0%;   margin-left: 100%; }
+    }
+
+    /* Status / log */
+    #status {
+      font-size: 10px;
+      color: var(--accent);
+      text-align: center;
+      min-height: 14px;
+    }
+    #status.info { color: var(--accent); }
+    #status.ok   { color: var(--green); }
+    #status.fail { color: #f47e7e; }
+    #status.warn { color: var(--yellow); }
+
+    /* Log expandido (hidden por padrão) */
+    #log {
+      background: #1a1a1a;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-family: monospace;
+      color: #666;
+      height: 70px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      display: none;
+    }
+    #log.visible { display: block; }
+    #log .ok   { color: #7ec87e; }
+    #log .fail { color: #f47e7e; }
+    #log .warn { color: #e8c87e; }
+
+    #btn-log-toggle {
+      background: none;
+      border: none;
+      color: #555;
+      font-size: 9px;
+      cursor: pointer;
+      text-align: right;
+      padding: 0;
+      width: 100%;
+    }
+    #btn-log-toggle:hover { color: #888; }
+
+    /* Footer */
+    .footer {
+      font-size: 11px;
+      color: #666;
+      text-align: center;
+      margin-top: auto;
+      padding-top: 4px;
+      line-height: 1.8;
+    }
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .footer a:hover { text-decoration: underline; }
+
+    /* Spinner inline */
+    .spinner {
+      display: inline-block;
+      width: 9px; height: 9px;
+      border: 2px solid #555;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <span class="header-title">BEAT MARKER <span style="font-weight:400;color:#666;">v1.0</span></span>
+      <div style="font-size:9px;color:#555;margin-top:2px;">criado por <span id="link-sama" style="color:#027aff;cursor:pointer;">samaBR</span></div>
+    </div>
+    <div class="status-dot"></div>
+  </div>
+
+  <!-- Clip info -->
+  <div class="clip-box">
+    <span id="clip-name">Selecione um clip .WAV no painel do projeto</span>
+    <span id="clip-hint" style="font-size:11px;color:#666;text-align:center;">e clique em ANALISAR CLIPE SELECIONADO</span>
+    <span id="clip-sub" style="display:none;"></span>
+  </div>
+
+  <!-- BPM -->
+  <div class="bpm-display">
+    <div id="bpm-val">--</div>
+    <div class="bpm-label">BPM · 4/4</div>
+  </div>
+
+  <!-- Beat grid com ◀ ▶ -->
+  <div class="beat-row">
+    <button class="btn-adj" id="btn-prev" disabled>◀</button>
+    <div class="beat-box" id="b1" style="background-color:#d53a3a;">1</div>
+    <div class="beat-box" id="b2" style="background-color:#4084e5;">2</div>
+    <div class="beat-box" id="b3" style="background-color:#d7ab2f;">3</div>
+    <div class="beat-box" id="b4" style="background-color:#4084e5;">4</div>
+    <button class="btn-adj" id="btn-next" disabled>▶</button>
+  </div>
+
+  <!-- Progress -->
+  <div id="progress-wrap"><div id="progress-bar"></div></div>
+
+  <!-- Botões de ação -->
+  <button class="btn btn-primary" id="btn-analyze">ANALISAR CLIPE SELECIONADO</button>
+  <button class="btn btn-success" id="btn-apply" disabled>CRIAR MARKERS NO CLIPE</button>
+  <button class="btn" id="btn-clear-markers">REMOVER MARKERS</button>
+
+  <!-- Log toggle + log -->
+  <button id="btn-log-toggle">mostrar log ▾</button>
+  <div id="log"></div>
+
+  <!-- Status line -->
+  <div id="status">Pronto</div>
+
+  <div class="footer">
+    <span id="footer-versions">Adobe Premiere Pro · Plugin UXP</span>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

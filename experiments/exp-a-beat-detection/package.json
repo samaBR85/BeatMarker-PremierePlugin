@@ -1,0 +1,14 @@
+{
+  "name": "beatmarker-exp-a",
+  "version": "0.1.0",
+  "description": "Experimento A: validação de bibliotecas de beat detection em Node.js puro. Laboratório — não entra no plugin.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "mpg123-decoder": "*",
+    "music-tempo": "*"
+  }
+}
