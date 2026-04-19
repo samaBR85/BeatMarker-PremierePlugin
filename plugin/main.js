@@ -288,6 +288,29 @@ btnApply.onclick = async () => {
     const clipMarkers = await ppro.Markers.getMarkers(clipPI);
     if (!clipMarkers) throw new Error(T.errNoMarkers);
 
+    // Remove any existing [BM] markers before creating new ones to avoid crashes
+    const existingMarkers = await clipMarkers.getMarkers();
+    const existingBM = existingMarkers.filter(m => m.getName && m.getName().startsWith('[BM]'));
+    if (existingBM.length > 0) {
+      const getDeleteAction = (col, m) => {
+        if (typeof m.createDeleteMarkerAction   === 'function') return m.createDeleteMarkerAction();
+        if (typeof m.createRemoveMarkerAction   === 'function') return m.createRemoveMarkerAction();
+        if (typeof col.createDeleteMarkerAction === 'function') return col.createDeleteMarkerAction(m);
+        if (typeof col.createRemoveMarkerAction === 'function') return col.createRemoveMarkerAction(m);
+        return null;
+      };
+      const BATCH_DEL = 50;
+      for (let b = 0; b < existingBM.length; b += BATCH_DEL) {
+        const slice = existingBM.slice(b, b + BATCH_DEL);
+        await project.executeTransaction(async (ca) => {
+          for (const m of slice) {
+            const action = getDeleteAction(clipMarkers, m);
+            if (action) ca.addAction(action);
+          }
+        }, 'BeatMarker pre-clean ' + (b / BATCH_DEL + 1));
+      }
+    }
+
     const BATCH = 50;
     for (let b = 0; b < beats.length; b += BATCH) {
       const slice = beats.slice(b, b + BATCH);
