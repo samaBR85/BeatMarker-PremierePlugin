@@ -558,16 +558,32 @@ Users can toggle individual beats (1–4) on/off before creating markers.
 
 - `activeBeats` — a `Set<number>` initialized to `{1,2,3,4}`, minimum 1 active
 - Beat boxes are clickable toggles; inline styles handle the active/inactive visual state (CSS classes fail due to ID selector specificity — see DEVELOPMENT.md)
-- Beats are **pre-filtered before the transaction loop**:
+- Beats are **pre-filtered before the transaction loop**, and the marker name stores the **global beat index** (not the position):
 
 ```js
 const beatsWithPos = beats
-  .map((t, i) => ({ t, pos: ((i + offset) % 4) + 1 }))
+  .map((t, i) => ({ t, globalIdx: i, pos: ((i + offset) % 4) + 1 }))
   .filter(({ pos }) => activeBeats.has(pos));
+
+// Name stores globalIdx so recolor can recalculate position for any offset
+ca.addAction(clipMarkers.createAddMarkerAction('[BM] ' + globalIdx, ...));
 ```
 
-- Marker coloring reads the marker **name** (e.g. `[BM] 1`) to determine beat position — not the loop index — ensuring correct colors regardless of which beats were created:
+- After creation, coloring derives position from globalIdx + current offset:
 
 ```js
-const beatPos = parseInt(marker.getName().replace('[BM] ', '')) || 1;
+const globalIdx = parseInt(marker.getName().replace('[BM] ', '')) || 0;
+const beatPos = ((globalIdx + offset) % 4) + 1;
 ```
+
+#### Phase shift with selective beats
+
+When fewer than 4 beats are active, phase shift does **not** recreate markers — it cycles the color assignment through the active beats by sorted index:
+
+```js
+const sortedActiveBeats = [...activeBeats].sort((a, b) => a - b);
+// For marker at sorted index i:
+const beatPos = sortedActiveBeats[(i + offset) % sortedActiveBeats.length];
+```
+
+This keeps markers at the same timestamps and cycles colors only within the active set (e.g. red↔yellow for beats 1&3). When all 4 beats are active, the standard globalIdx+offset logic applies.
