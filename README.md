@@ -93,7 +93,7 @@ BeatMarker-PremierePlugin/
 │   ├── exp-a-beat-detection/      ← Node.js proof of concept (mpg123 + music-tempo)
 │   └── exp-b-uxp-viability/       ← Bundle source
 │       ├── src/
-│       │   ├── analysis.js        ← Pipeline: WAV decoder + MP3 decoder + resample + beat detection
+│       │   ├── analysis.js        ← Pipeline: WAV decoder + resample + beat detection
 │       │   └── stubs/             ← Polyfills for modules missing in UXP
 │       ├── build.js               ← esbuild config
 │       └── package.json
@@ -111,7 +111,6 @@ BeatMarker-PremierePlugin/
 | Runtime | UXP (Unified Extensibility Platform) — manifest v5 |
 | UI | HTML + CSS + vanilla JavaScript |
 | WAV decoding | Pure JS via DataView — PCM 8/16/24-bit + float32, any sample rate |
-| MP3 decoding | js-mp3 (no WASM) with pre-allocation and per-frame downsampling |
 | Beat detection | music-tempo |
 | Bundler | esbuild |
 | i18n | Auto-detected via `navigator.language` |
@@ -140,9 +139,8 @@ The UI language is detected automatically from the system locale — no configur
 
 ## ⚠️ Known limitations
 
-- Only `.WAV` files are accepted in the UI (**4/4 time signature** only)
+- Only `.WAV` files are accepted (**4/4 time signature** only)
 - No support for variable tempo (rubato, accelerando, ritardando)
-- MP3 has a ~50ms offset due to LAME encoder delay (WAV is recommended)
 
 ---
 
@@ -153,7 +151,6 @@ This project is licensed under the **GNU GPL v3** — any derivative work must a
 ### Third-party licenses
 
 - [music-tempo](https://github.com/killiansheriff/music-tempo) — MIT
-- [js-mp3](https://github.com/nicktindall/js-mp3) — MIT
 
 ---
 

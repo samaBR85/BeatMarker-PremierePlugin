@@ -453,51 +453,6 @@ function resample(mono, srcRate) {
 }
 ```
 
-### Decoder MP3 com js-mp3 (sem O(n²))
-
-O `js-mp3` original usa `concatBuffers` que aloca um novo ArrayBuffer a cada frame — O(n²) — causando crash por pressão de memória. Fix:
-
-```js
-import Mp3 from 'js-mp3';
-import Mp3Frame from 'js-mp3/src/frame';
-
-function decodeMp3(arrayBuffer) {
-  const decoder     = Mp3.newDecoder(arrayBuffer);
-  const nch         = decoder.frame.header.numberOfChannels();
-  const sampleRate  = decoder.sampleRate;
-  const FRAME_STEP  = 2; // downsample 2:1 dentro de cada frame
-  const mono = new Float32Array(Math.ceil(decoder.frameStarts.length * 1152 / FRAME_STEP));
-  let writePos = 0;
-
-  function storeFrame(frame) {
-    const pcm  = frame.decode();
-    const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.byteLength);
-    const n    = pcm.byteLength / (nch * 2);
-    for (let i = 0; i < n; i += FRAME_STEP) {
-      let sum = 0;
-      for (let c = 0; c < nch; c++) sum += view.getInt16((i * nch + c) * 2, true) / 32768;
-      mono[writePos++] = sum / nch;
-    }
-  }
-
-  // Rebobinar com estado limpo para evitar double-decode do frame 1
-  decoder.source.seek(decoder.frameStarts[0]);
-  let prevFrame = null;
-  while (true) {
-    const result = Mp3Frame.read(decoder.source, decoder.source.pos, prevFrame);
-    if (result.err) break;
-    prevFrame = result.f;
-    storeFrame(prevFrame);
-  }
-
-  return { mono: mono.subarray(0, writePos), sampleRate: sampleRate / FRAME_STEP };
-}
-```
-
-**Por que não pular frames inteiros:** pular frames cria buracos temporais no sinal — os beats ficam deslocados. Downsample dentro de cada frame mantém a continuidade temporal.
-
-**Encoder delay MP3:** ~50ms de offset estrutural do encoder LAME. Aceitável para uso prático. WAV é sempre mais preciso.
-
 ---
 
 ## 10. Empacotamento e distribuição
@@ -550,7 +505,7 @@ function decodeMp3(arrayBuffer) {
 
 - Operações pesadas (decode de áudio, análise) bloqueiam a UI — dar feedback visual antes de iniciar
 - Liberar referências a ArrayBuffers grandes após o uso
-- `analyzeAudio` pode levar 5–8s para MP3 — comunicar isso na UI
+- `analyzeAudio` pode levar alguns segundos para arquivos grandes — comunicar isso na UI
 
 ---
 
