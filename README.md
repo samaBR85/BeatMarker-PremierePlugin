@@ -2,88 +2,72 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-**Plugin UXP para Adobe Premiere Pro** que detecta automaticamente as batidas de uma trilha de áudio e cria markers coloridos no source do clipe — dando ao editor uma referência visual rítmica precisa para cortes sincronizados com a música.
-
-> **Beat detection plugin for Adobe Premiere Pro** — automatically analyzes audio and creates colored beat markers on the source clip for music-synced editing.
+**UXP Plugin for Adobe Premiere Pro** that automatically detects beats in an audio track and creates colored markers on the source clip — giving editors a precise visual rhythm reference for music-synced cuts.
 
 ---
 
-## ✨ O que faz / What it does
+## ✨ Features
 
-- 🎵 **Detecta BPM e beats** em arquivos WAV com um clique
-- 🎨 **Cria markers coloridos** no source do clipe, diferenciando visualmente cada posição do compasso:
-  - 🔴 Beat **1** → Vermelho / Red
-  - 🔵 Beats **2 e 4** → Azul / Blue
-  - 🟡 Beat **3** → Amarelo / Yellow
-- ◀ ▶ **Ajuste de fase** — desloca qual beat é o "1" sem reanalisar o áudio
-- 🗑️ **Remove markers** com um clique (qualquer clipe selecionado no Project panel)
-- 🌐 **Bilíngue** — PT-BR e English, detectado automaticamente pelo idioma do sistema
-
----
-
-## 🎬 Para quem é isso / Who it's for
-
-Editores de vídeo que cortam no ritmo da música — videoclipes, trailers, reels, cortes sincronizados. Sem necessidade de conhecimento musical. Sem jargão. Funciona em **Windows e macOS** a partir do mesmo instalador.
-
-*Video editors who cut to the beat — music videos, trailers, reels, sync edits. No music theory required. Works on Windows and macOS from the same installer.*
+- 🎵 **Detects BPM and beats** in WAV files with one click
+- 🎨 **Creates colored markers** on the source clip, visually distinguishing each beat position:
+  - 🔴 Beat **1** → Red
+  - 🔵 Beats **2 & 4** → Blue
+  - 🟡 Beat **3** → Yellow
+- ◀ ▶ **Phase adjustment** — shifts which beat is the "1" without re-analyzing
+- 🗑️ **Remove markers** with one click (any clip selected in the Project panel)
+- 🌐 **Bilingual** — automatically detected from system language (see [Languages](#-languages))
 
 ---
 
-## 🚀 Como usar / How to use
+## 🎬 Who it's for
 
-**PT-BR**
-1. Abra o painel **BeatMarker** no Premiere Pro (`Window → Extensions → BeatMarker`)
-2. Selecione um clipe `.WAV` no painel Project
-3. Clique em **ANALISAR CLIPE SELECIONADO**
-4. Confira o BPM detectado
-5. Clique em **CRIAR MARKERS NO CLIPE**
-6. Se o beat "1" estiver na posição errada, use **◀ ▶** para ajustar
-7. Para refazer: **REMOVER MARKERS**
+Video editors who cut to the beat — music videos, trailers, reels, sync edits. No music theory required. Works on **Windows and macOS** from the same installer.
 
-**English**
+---
+
+## 🚀 How to use
+
 1. Open the **BeatMarker** panel in Premiere Pro (`Window → Extensions → BeatMarker`)
 2. Select a `.WAV` clip in the Project panel
 3. Click **ANALYZE SELECTED CLIP**
 4. Check the detected BPM
 5. Click **CREATE MARKERS ON CLIP**
 6. If beat "1" is in the wrong place, use **◀ ▶** to shift
-7. To redo: **REMOVE MARKERS**
+7. To redo: click **REMOVE MARKERS**
 
 ---
 
-## 🛠️ Instalação para desenvolvimento / Dev install
+## 🛠️ Dev install
 
-### Pré-requisitos / Prerequisites
+### Prerequisites
 - Adobe Premiere Pro 25.0+
 - [UXP Developer Tool](https://developer.adobe.com/photoshop/uxp/devtool/)
 
-### Passos / Steps
+### Steps
 
 ```bash
-# Clonar / Clone
-git clone https://github.com/samaBR85/beatmarker-plugin.git
-cd beatmarker-plugin
+git clone https://github.com/samaBR85/BeatMarker-PremierePlugin.git
 ```
 
-1. Abrir o **UXP Developer Tool**
-2. Clicar em **Add Plugin**
-3. Navegar até a pasta `plugin/` e selecionar o `manifest.json`
-4. Clicar em **Load** no Premiere Pro
+1. Open the **UXP Developer Tool**
+2. Click **Add Plugin**
+3. Navigate to the `plugin/` folder and select `manifest.json`
+4. Click **Load** in Premiere Pro
 
-O `analysis-bundle.js` já está pré-compilado na pasta `plugin/` — não é necessário buildar para usar.
+The `analysis-bundle.js` is pre-compiled inside `plugin/` — no build step needed to run the plugin.
 
 ---
 
-## 🔨 Rebuildar o bundle / Rebuild the bundle
+## 🔨 Rebuild the bundle
 
-Necessário apenas se modificar o código de análise de áudio em `experiments/exp-b-uxp-viability/src/`.
+Only needed if you modify the audio analysis code in `experiments/exp-b-uxp-viability/src/`.
 
 ```bash
 cd experiments/exp-b-uxp-viability
 npm install
 npm run build
 
-# Copiar para o plugin
+# Copy to plugin:
 # Windows:
 copy analysis-bundle.js ..\..\plugin\analysis-bundle.js
 # macOS/Linux:
@@ -92,75 +76,85 @@ cp analysis-bundle.js ../../plugin/analysis-bundle.js
 
 ---
 
-## 📁 Estrutura do projeto / Project structure
+## 📁 Project structure
 
 ```
-beatmarker-plugin/
+BeatMarker-PremierePlugin/
 │
-├── plugin/                        ← Plugin pronto para instalar
+├── plugin/                        ← Ready-to-install plugin
 │   ├── manifest.json              ← UXP manifest v5
-│   ├── index.html                 ← Interface do painel
-│   ├── main.js                    ← Lógica UXP + Premiere API + i18n
-│   └── analysis-bundle.js        ← Bundle pré-compilado (WAV decoder + music-tempo)
+│   ├── index.html                 ← Panel UI
+│   ├── main.js                    ← UXP logic + Premiere API + i18n
+│   └── analysis-bundle.js        ← Pre-compiled bundle (WAV decoder + music-tempo)
 │
 ├── experiments/
-│   ├── exp-a-beat-detection/      ← Prova de conceito Node.js (mpg123 + music-tempo)
-│   └── exp-b-uxp-viability/       ← Fonte do analysis-bundle
+│   ├── exp-a-beat-detection/      ← Node.js proof of concept (mpg123 + music-tempo)
+│   └── exp-b-uxp-viability/       ← Bundle source
 │       ├── src/
 │       │   ├── analysis.js        ← Pipeline: WAV decoder + MP3 decoder + resample + beat detection
-│       │   └── stubs/             ← Polyfills para módulos ausentes no UXP
-│       ├── build.js               ← Config esbuild
+│       │   └── stubs/             ← Polyfills for modules missing in UXP
+│       ├── build.js               ← esbuild config
 │       └── package.json
 │
-├── SPEC.md                        ← Spec técnico completo
+├── SPEC.md                        ← Full technical spec
 └── README.md
 ```
 
 ---
 
-## ⚙️ Stack técnica / Tech stack
+## ⚙️ Tech stack
 
-| Componente | Tecnologia |
+| Component | Technology |
 |---|---|
 | Runtime | UXP (Unified Extensibility Platform) — manifest v5 |
-| UI | HTML + CSS + JavaScript vanilla |
-| Decode WAV | DataView puro JS — PCM 8/16/24-bit + float32, qualquer sample rate |
-| Decode MP3 | js-mp3 (sem WASM) com pré-alocação e downsample por frame |
+| UI | HTML + CSS + vanilla JavaScript |
+| WAV decoding | Pure JS via DataView — PCM 8/16/24-bit + float32, any sample rate |
+| MP3 decoding | js-mp3 (no WASM) with pre-allocation and per-frame downsampling |
 | Beat detection | music-tempo |
 | Bundler | esbuild |
-| i18n | Detecção automática via `navigator.language` |
+| i18n | Auto-detected via `navigator.language` |
 
-### Por que sem WASM / Why no WASM
+### Why no WASM
 
-| Tecnologia | Problema |
+| Technology | Problem |
 |---|---|
-| WASM com pthreads | Crasha o Premiere imediatamente |
-| Web Workers | `typeof Worker === 'undefined'` no UXP |
-| `AudioContext` | Não existe no UXP |
-| `fs.readFileSync` | "Route not found" no UXP |
+| WASM with pthreads | Crashes Premiere Pro immediately |
+| Web Workers | `typeof Worker === 'undefined'` in UXP |
+| `AudioContext` | Does not exist in UXP |
+| `fs.readFileSync` | "Route not found" in UXP |
 
 ---
 
-## ⚠️ Limitações conhecidas / Known limitations
+## 🌐 Languages
 
-- Apenas arquivos `.WAV` aceitos na UI (compasso **4/4** apenas)
-- Sem suporte a tempo variável (rubato, acelerando, ritardando)
-- MP3 tem offset de ~50ms por encoder delay estrutural do LAME (aceito, WAV é recomendado)
+The UI language is detected automatically from the system locale — no configuration needed.
+
+| Language | Locale |
+|---|---|
+| 🇧🇷 Portuguese (PT-BR) | `pt`, `pt-BR` |
+| 🇺🇸 English | all other locales |
 
 ---
 
-## 📄 Licença / License
+## ⚠️ Known limitations
 
-Este projeto é distribuído sob a licença **GNU GPL v3** — qualquer derivado deve ser igualmente open source.  
-*This project is licensed under **GNU GPL v3** — any derivative work must also be open source.*
+- Only `.WAV` files are accepted in the UI (**4/4 time signature** only)
+- No support for variable tempo (rubato, accelerando, ritardando)
+- MP3 has a ~50ms offset due to LAME encoder delay (WAV is recommended)
 
-### Licenças de terceiros / Third-party licenses
+---
+
+## 📄 License
+
+This project is licensed under the **GNU GPL v3** — any derivative work must also be open source.
+
+### Third-party licenses
 
 - [music-tempo](https://github.com/killiansheriff/music-tempo) — MIT
 - [js-mp3](https://github.com/nicktindall/js-mp3) — MIT
 
 ---
 
-## 👤 Créditos / Credits
+## 👤 Credits
 
-Criado por / Created by **[samaBR](https://github.com/samaBR85)**
+Created by **[samaBR](https://github.com/samaBR85)**
