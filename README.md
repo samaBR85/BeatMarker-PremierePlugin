@@ -6,6 +6,8 @@
 
 **UXP Plugin for Adobe Premiere Pro** that automatically detects beats in an audio track and creates colored markers on the source clip — giving editors a precise visual rhythm reference for music-synced cuts.
 
+<img src="screenshots/plugin-screen.png" width="280" alt="BeatMarker panel in Adobe Premiere Pro"/>
+
 ---
 
 ## ✨ Features
@@ -29,13 +31,35 @@ Video editors who cut to the beat — music videos, trailers, reels, sync edits.
 
 ## 🚀 How to use
 
-1. Open the **BeatMarker** panel in Premiere Pro (`Window → Extensions → BeatMarker`)
-2. Select a `.WAV` clip in the Project panel
-3. Click **ANALYZE SELECTED CLIP**
-4. Check the detected BPM
-5. Click **CREATE MARKERS ON CLIP**
-6. If beat "1" is in the wrong place, use **◀ ▶** to shift
-7. To redo: click **REMOVE MARKERS**
+<img src="screenshots/step-by-step_guide.png" alt="Step-by-step guide" width="600"/>
+
+| Step | Action |
+|------|--------|
+| **1** | Open the **BeatMarker** panel (`Window → Extensions → BeatMarker`) and select a `.WAV` clip in the Project panel |
+| **2** | Click **ANALYZE SELECTED CLIP** and wait for the BPM to be detected |
+| **3** | Click **CREATE MARKERS ON CLIP** — colored markers appear on the clip |
+| **4** | If beat "1" is in the wrong place, use **◀ ▶** to shift the phase |
+| **5** | To start over, click **REMOVE MARKERS** |
+
+<details>
+<summary>📸 View individual steps</summary>
+
+**Step 1 — Select clip & open panel**
+<img src="screenshots/step01.png" alt="Step 1" width="600"/>
+
+**Step 2 — Analyze**
+<img src="screenshots/step02.png" alt="Step 2" width="600"/>
+
+**Step 3 — Create markers**
+<img src="screenshots/step03.png" alt="Step 3" width="600"/>
+
+**Step 4 — Adjust phase if needed**
+<img src="screenshots/step04.png" alt="Step 4" width="600"/>
+
+**Step 5 — Remove markers**
+<img src="screenshots/step05.png" alt="Step 5" width="600"/>
+
+</details>
 
 ---
 
@@ -98,7 +122,10 @@ BeatMarker-PremierePlugin/
 │       ├── build.js               ← esbuild config
 │       └── package.json
 │
+├── screenshots/                   ← Usage screenshots
+├── assets/                        ← Icon source files
 ├── SPEC.md                        ← Full technical spec
+├── INSTALL.md                     ← End-user installation guide
 └── README.md
 ```
 

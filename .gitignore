@@ -13,6 +13,9 @@ experiments/exp-b-uxp-viability/lib/
 # Claude Code
 .claude/
 
+# Screenshot source files (PSD, raw assets)
+screenshots/assets/
+
 # OS
 .DS_Store
 Thumbs.db
