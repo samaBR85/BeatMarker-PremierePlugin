@@ -15,7 +15,7 @@
   - 🟡 Beat **3** → Yellow
 - ◀ ▶ **Phase adjustment** — shifts which beat is the "1" without re-analyzing
 - 🗑️ **Remove markers** with one click (any clip selected in the Project panel)
-- 🌐 **Bilingual** — automatically detected from system language (see [Languages](#-languages))
+- 🌐 **Bilingual (ENG / PT-BR)** — UI language automatically detected from system locale
 
 ---
 
