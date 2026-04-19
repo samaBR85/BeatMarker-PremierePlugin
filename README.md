@@ -1,8 +1,6 @@
-# 🥁 BeatMarker
+# <img src="assets/icon.png" width="48" alt="BeatMarker icon" style="vertical-align:middle;margin-right:8px;"/> BeatMarker
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-
-<img src="assets/icon.png" width="128" alt="BeatMarker icon"/>
 
 **UXP Plugin for Adobe Premiere Pro** that automatically detects beats in an audio track and creates colored markers on the source clip — giving editors a precise visual rhythm reference for music-synced cuts.
 
