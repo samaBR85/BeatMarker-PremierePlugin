@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BeatMarker — Beat detection for Premiere Pro</title>
+  <meta name="description" content="Free UXP plugin for Adobe Premiere Pro. Auto-detects BPM and places colored markers on your source clip." />
+  <style>
+    :root {
+      --red:    #d53a3a;
+      --blue:   #4084e5;
+      --yellow: #d7ab2f;
+      --green:  #34c759;
+      --bg:     #0e0e0e;
+      --bg2:    #161616;
+      --bg3:    #1e1e1e;
+      --border: #2a2a2a;
+      --text:   #e8e8e8;
+      --muted:  #888;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(14,14,14,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    /* ── LANG SWITCHER ── */
+    .lang-switcher {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px;
+    }
+    .lang-btn {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 9px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .lang-btn.active {
+      background: var(--border);
+      color: var(--text);
+    }
+    .lang-btn:hover:not(.active) { color: var(--text); }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      .nav-links { display: none; }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 50%, rgba(213,58,58,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 30%, rgba(64,132,229,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 50% 80%, rgba(215,171,47,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(52px, 8vw, 96px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -3px;
+      margin-bottom: 12px;
+    }
+    .hero h1 .b      { color: var(--red); }
+    .hero h1 .e      { color: var(--blue); }
+    .hero h1 .a      { color: var(--yellow); }
+    .hero h1 .t      { color: var(--blue); }
+    .hero h1 .marker { color: var(--text); }
+
+    .hero-tagline {
+      font-size: clamp(16px, 2.5vw, 22px);
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto 16px;
+      font-weight: 400;
+    }
+    .hero-sub {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 48px;
+    }
+    .hero-waveform {
+      margin-bottom: 20px;
+      max-width: 580px;
+      width: 100%;
+    }
+    .hero-waveform img {
+      width: 100%;
+      border-radius: 8px;
+      display: block;
+    }
+    .hero-beats {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 48px;
+    }
+    .beat-pill {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .beat-pill:nth-child(1) { background: var(--red); }
+    .beat-pill:nth-child(2) { background: var(--blue); }
+    .beat-pill:nth-child(3) { background: var(--yellow); }
+    .beat-pill:nth-child(4) { background: var(--blue); }
+
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--red); color: #fff; border: 2px solid var(--red); }
+    .btn-primary:hover { background: #c02e2e; border-color: #c02e2e; text-decoration: none; }
+    .btn-ghost { background: transparent; color: var(--text); border: 2px solid var(--border); }
+    .btn-ghost:hover { border-color: #444; text-decoration: none; }
+
+    /* ── SCREENSHOT ── */
+    .screenshot-section {
+      padding: 0 24px 100px;
+      display: flex;
+      justify-content: center;
+    }
+    .screenshot-wrap {
+      position: relative;
+      max-width: 320px;
+      width: 100%;
+    }
+    .screenshot-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--red), var(--blue), var(--yellow));
+      z-index: -1;
+      filter: blur(20px);
+      opacity: 0.4;
+    }
+    .screenshot-wrap img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    /* ── SECTION ── */
+    section { padding: 100px 24px; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      line-height: 1.05;
+      margin-bottom: 20px;
+    }
+    .section-desc {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.6;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2px;
+      margin-top: 60px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .step { background: var(--bg2); padding: 36px 28px; position: relative; }
+    .step-num { font-size: 48px; font-weight: 900; color: var(--border); line-height: 1; margin-bottom: 16px; }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .step p { font-size: 14px; color: var(--muted); }
+
+    /* ── FEATURES ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2px;
+      margin-top: 60px;
+    }
+    .feature {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 32px;
+      transition: border-color 0.2s;
+    }
+    .feature:hover { border-color: #444; }
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+    .feature h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .feature p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ── COLORS ── */
+    .colors-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .colors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+      margin-top: 60px;
+    }
+    .color-card { border-radius: 12px; padding: 32px; border: 1px solid rgba(255,255,255,0.05); }
+    .color-swatch { width: 48px; height: 48px; border-radius: 8px; margin-bottom: 20px; }
+    .color-card h3 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .color-card .beat-label { font-size: 12px; color: var(--muted); margin-bottom: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+    .color-card p { font-size: 14px; color: var(--muted); }
+
+    /* ── SHORTCUTS BOX ── */
+    .shortcuts-box {
+      margin-top: 40px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+    }
+    .shortcuts-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .shortcuts-grid {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .shortcut-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .shortcut-label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .shortcut-keys {
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      color: var(--text);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 8px;
+      letter-spacing: 0.5px;
+    }
+    .shortcuts-note {
+      font-size: 12px;
+      color: #555;
+    }
+
+    /* ── STEPS GUIDE ── */
+    .guide-img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-top: 60px;
+      display: block;
+    }
+
+    /* ── INSTALL ── */
+    .install-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 48px;
+      margin-top: 60px;
+      display: flex;
+      gap: 48px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .install-box .install-text { flex: 1; min-width: 240px; }
+    .install-box h3 { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+    .install-box p { color: var(--muted); margin-bottom: 24px; font-size: 15px; }
+    .install-reqs { list-style: none; }
+    .install-reqs li {
+      font-size: 14px;
+      color: var(--muted);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .install-reqs li::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+    .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+
+    /* ── DIVIDER ── */
+    .divider { width: 100%; height: 1px; background: var(--border); }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo"><span style="color:var(--red)">B</span><span style="color:var(--blue)">E</span><span style="color:var(--yellow)">A</span><span style="color:var(--blue)">T</span><span style="color:var(--text)">MARKER</span></div>
+  <div class="nav-right">
+    <div class="nav-links">
+      <a href="#features"      data-en="Features"     data-pt="Recursos">Features</a>
+      <a href="#how-it-works"  data-en="How it works" data-pt="Como funciona">How it works</a>
+      <a href="#install"       data-en="Install"      data-pt="Instalar">Install</a>
+      <a href="https://github.com/samaBR85/BeatMarker-PremierePlugin" target="_blank">GitHub</a>
+    </div>
+    <div class="lang-switcher">
+      <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn"        id="btn-pt" onclick="setLang('pt')">PT</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-eyebrow" data-en="Free UXP Plugin · Adobe Premiere Pro" data-pt="Plugin UXP Gratuito · Adobe Premiere Pro">Free UXP Plugin · Adobe Premiere Pro</div>
+  <h1><span class="b">B</span><span class="e">e</span><span class="a">a</span><span class="t">t</span><span class="marker">Marker</span></h1>
+  <p class="hero-tagline" data-en="Auto-detects BPM and places colored markers on your source clip. Cut to the beat — automatically." data-pt="Detecta o BPM automaticamente e cria marcadores coloridos no seu clipe. Corte no beat — sem esforço.">Auto-detects BPM and places colored markers on your source clip. Cut to the beat — automatically.</p>
+  <p class="hero-sub" data-en="No subscription. No account. No dependencies." data-pt="Sem assinatura. Sem cadastro. Sem dependências.">No subscription. No account. No dependencies.</p>
+  <div class="hero-waveform">
+    <img src="screenshots/sample.png" alt="Waveform with beat markers" />
+  </div>
+  <div class="hero-beats">
+    <div class="beat-pill">1</div>
+    <div class="beat-pill">2</div>
+    <div class="beat-pill">3</div>
+    <div class="beat-pill">4</div>
+  </div>
+  <div class="hero-cta">
+    <a class="btn btn-primary" href="https://github.com/samaBR85/BeatMarker-PremierePlugin/releases" data-en="↓ Download Plugin (.ccx)" data-pt="↓ Baixar Plugin (.ccx)">↓ Download Plugin (.ccx)</a>
+    <a class="btn btn-ghost" href="https://github.com/samaBR85/BeatMarker-PremierePlugin" target="_blank" data-en="View on GitHub" data-pt="Ver no GitHub">View on GitHub</a>
+  </div>
+</section>
+
+<!-- SCREENSHOT -->
+<div class="screenshot-section">
+  <div class="screenshot-wrap">
+    <img src="screenshots/plugin-screen.png" alt="BeatMarker plugin panel" />
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div id="features" style="background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <section>
+    <div class="section-label" data-en="Features" data-pt="Recursos">Features</div>
+    <h2 class="section-title" data-en="Everything you need.<br>Nothing you don't." data-pt="Tudo que você precisa.<br>Nada além disso.">Everything you need.<br>Nothing you don't.</h2>
+    <p class="section-desc" data-en="Built by an editor, for editors. One click to analyze, one click to mark." data-pt="Feito por um editor, para editores. Um clique para analisar, um clique para marcar.">Built by an editor, for editors. One click to analyze, one click to mark.</p>
+
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon" style="background: rgba(213,58,58,0.15);">🎯</div>
+        <h3 data-en="BPM Detection" data-pt="Detecção de BPM">BPM Detection</h3>
+        <p data-en="Automatically detects tempo from any WAV or MP3 file. No manual tapping, no guessing." data-pt="Detecta o tempo automaticamente de qualquer arquivo WAV ou MP3. Sem tap manual, sem chute.">Automatically detects tempo from any WAV or MP3 file. No manual tapping, no guessing.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background: rgba(64,132,229,0.15);">🎨</div>
+        <h3 data-en="Colored Markers" data-pt="Marcadores Coloridos">Colored Markers</h3>
+        <p data-en="Beat 1 in red, backbeats in blue, beat 3 in yellow. Instantly visual rhythm reference on your source clip." data-pt="Beat 1 em vermelho, contratempos em azul, beat 3 em amarelo. Referência visual de ritmo instantânea no seu clipe.">Beat 1 in red, backbeats in blue, beat 3 in yellow. Instantly visual rhythm reference on your source clip.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background: rgba(52,199,89,0.15);">📊</div>
+        <h3 data-en="Confidence Indicator" data-pt="Indicador de Confiança">Confidence Indicator</h3>
+        <p data-en="See how reliable the detection was before committing. Green means rock solid. Red means check manually." data-pt="Veja o quão confiável foi a detecção antes de aplicar. Verde é sólido. Vermelho requer revisão.">See how reliable the detection was before committing. Green means rock solid. Red means check manually.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background: rgba(215,171,47,0.15);">🎛️</div>
+        <h3 data-en="Beat Selection" data-pt="Seleção de Beats">Beat Selection</h3>
+        <p data-en="Toggle which beats to mark. Just the downbeat? Only 1 and 3? Your call — tap to toggle." data-pt="Escolha quais beats marcar. Só o downbeat? Apenas 1 e 3? Você decide — toque para alternar.">Toggle which beats to mark. Just the downbeat? Only 1 and 3? Your call — tap to toggle.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background: rgba(64,132,229,0.15);">◀▶</div>
+        <h3 data-en="Phase Adjustment" data-pt="Ajuste de Fase">Phase Adjustment</h3>
+        <p data-en="Grid landed off by one beat? Shift the phase without re-analyzing. One click left or right." data-pt="A grade ficou deslocada um beat? Ajuste a fase sem reanalisar. Um clique à esquerda ou direita.">Grid landed off by one beat? Shift the phase without re-analyzing. One click left or right.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background: rgba(255,255,255,0.05);">🌐</div>
+        <h3 data-en="Bilingual" data-pt="Bilíngue">Bilingual</h3>
+        <p data-en="Full UI in English and Portuguese (PT-BR). Language detected automatically from your system." data-pt="Interface completa em inglês e português (PT-BR). Idioma detectado automaticamente pelo sistema.">Full UI in English and Portuguese (PT-BR). Language detected automatically from your system.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- COLORS -->
+<div class="colors-section">
+  <section>
+    <div class="section-label" data-en="Marker Colors" data-pt="Cores dos Marcadores">Marker Colors</div>
+    <h2 class="section-title" data-en="Every beat has<br>a color." data-pt="Cada beat tem<br>uma cor.">Every beat has<br>a color.</h2>
+    <p class="section-desc" data-en="The color system maps directly to beat position so you can navigate your timeline at a glance." data-pt="O sistema de cores mapeia diretamente a posição do beat para você navegar na timeline de relance.">The color system maps directly to beat position so you can navigate your timeline at a glance.</p>
+
+    <div class="colors-grid">
+      <div class="color-card" style="background: rgba(213,58,58,0.08); border-color: rgba(213,58,58,0.2);">
+        <div class="color-swatch" style="background: #d53a3a;"></div>
+        <h3 data-en="Red" data-pt="Vermelho">Red</h3>
+        <div class="beat-label" data-en="Beat 1 — Downbeat" data-pt="Beat 1 — Downbeat">Beat 1 — Downbeat</div>
+        <p data-en="The strongest beat of the bar. Your primary cut point." data-pt="O beat mais forte do compasso. Seu ponto de corte principal.">The strongest beat of the bar. Your primary cut point.</p>
+      </div>
+      <div class="color-card" style="background: rgba(64,132,229,0.08); border-color: rgba(64,132,229,0.2);">
+        <div class="color-swatch" style="background: #4084e5;"></div>
+        <h3 data-en="Blue" data-pt="Azul">Blue</h3>
+        <div class="beat-label" data-en="Beats 2 &amp; 4 — Backbeats" data-pt="Beats 2 e 4 — Contratempos">Beats 2 &amp; 4 — Backbeats</div>
+        <p data-en="Where the snare hits. The pulse that drives the groove." data-pt="Onde a caixa cai. O pulso que impulsiona o groove.">Where the snare hits. The pulse that drives the groove.</p>
+      </div>
+      <div class="color-card" style="background: rgba(215,171,47,0.08); border-color: rgba(215,171,47,0.2);">
+        <div class="color-swatch" style="background: #d7ab2f;"></div>
+        <h3 data-en="Yellow" data-pt="Amarelo">Yellow</h3>
+        <div class="beat-label" data-en="Beat 3 — Secondary Downbeat" data-pt="Beat 3 — Downbeat Secundário">Beat 3 — Secondary Downbeat</div>
+        <p data-en="Mid-bar emphasis. Great for secondary cut points and transitions." data-pt="Ênfase no meio do compasso. Ótimo para cortes secundários e transições.">Mid-bar emphasis. Great for secondary cut points and transitions.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- HOW IT WORKS -->
+<div id="how-it-works">
+  <section>
+    <div class="section-label" data-en="How it works" data-pt="Como funciona">How it works</div>
+    <h2 class="section-title" data-en="Three steps.<br>Done." data-pt="Três passos.<br>Pronto.">Three steps.<br>Done.</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3 data-en="Select your clip" data-pt="Selecione o clipe">Select your clip</h3>
+        <p data-en="Pick any .WAV or .MP3 clip in the Premiere Pro Project panel." data-pt="Selecione qualquer clipe .WAV ou .MP3 no painel de Projeto do Premiere Pro.">Pick any .WAV or .MP3 clip in the Premiere Pro Project panel.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3 data-en="Analyze" data-pt="Analisar">Analyze</h3>
+        <p data-en="Click Analyze. BeatMarker detects the BPM and maps every beat." data-pt="Clique em Analisar. O BeatMarker detecta o BPM e mapeia cada beat.">Click Analyze. BeatMarker detects the BPM and maps every beat.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3 data-en="Create markers" data-pt="Criar marcadores">Create markers</h3>
+        <p data-en="Click Create Markers. Colored markers appear instantly on your source clip." data-pt="Clique em Criar Marcadores. Marcadores coloridos aparecem instantaneamente no clipe.">Click Create Markers. Colored markers appear instantly on your source clip.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3 data-en="Cut" data-pt="Cortar">Cut</h3>
+        <p data-en="Open the clip in the Source Monitor and cut to the beat with a visual grid." data-pt="Abra o clipe no Monitor de Origem e corte no beat com uma grade visual.">Open the clip in the Source Monitor and cut to the beat with a visual grid.</p>
+      </div>
+    </div>
+
+    <div class="shortcuts-box">
+      <div class="shortcuts-title" data-en="⌨️ Navigate markers with keyboard shortcuts" data-pt="⌨️ Navegue pelos marcadores com atalhos de teclado">⌨️ Navigate markers with keyboard shortcuts</div>
+      <div class="shortcuts-grid">
+        <div class="shortcut-item">
+          <span class="shortcut-label" data-en="Next marker" data-pt="Próximo marcador">Next marker</span>
+          <span class="shortcut-keys">Shift + M</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label" data-en="Previous marker" data-pt="Marcador anterior">Previous marker</span>
+          <span class="shortcut-keys"><span data-en="Ctrl" data-pt="Ctrl">Ctrl</span> + Shift + M</span>
+        </div>
+      </div>
+      <p class="shortcuts-note" data-en="Works in the Timeline and in the Source Monitor." data-pt="Funciona na Timeline e no Monitor de Origem.">Works in the Timeline and in the Source Monitor.</p>
+    </div>
+
+    <img class="guide-img" src="screenshots/step-by-step_guide.png" alt="Step by step guide" />
+  </section>
+</div>
+
+<!-- INSTALL -->
+<div id="install" style="background: var(--bg2); border-top: 1px solid var(--border);">
+  <section>
+    <div class="section-label" data-en="Install" data-pt="Instalação">Install</div>
+    <h2 class="section-title" data-en="Up and running<br>in 30 seconds." data-pt="Pronto para usar<br>em 30 segundos.">Up and running<br>in 30 seconds.</h2>
+
+    <div class="install-box">
+      <div class="install-text">
+        <h3 data-en="Download &amp; install" data-pt="Baixar e instalar">Download &amp; install</h3>
+        <p data-en="Download the <code>.ccx</code> file, close Premiere Pro, double-click — done. No Node, no Python, no dependencies." data-pt="Baixe o arquivo <code>.ccx</code>, feche o Premiere Pro, dê um duplo clique — pronto. Sem Node, sem Python, sem dependências.">Download the <code>.ccx</code> file, close Premiere Pro, double-click — done. No Node, no Python, no dependencies.</p>
+        <a class="btn btn-primary" href="https://github.com/samaBR85/BeatMarker-PremierePlugin/releases" data-en="↓ Download Plugin (.ccx)" data-pt="↓ Baixar Plugin (.ccx)">↓ Download Plugin (.ccx)</a>
+      </div>
+      <div>
+        <ul class="install-reqs">
+          <li data-en="Adobe Premiere Pro 25.0 or later"   data-pt="Adobe Premiere Pro 25.0 ou superior">Adobe Premiere Pro 25.0 or later</li>
+          <li data-en="Windows or macOS"                   data-pt="Windows ou macOS">Windows or macOS</li>
+          <li data-en="WAV or MP3 audio files (4/4 time)"   data-pt="Arquivos de áudio WAV ou MP3 (compasso 4/4)">WAV or MP3 audio files (4/4 time)</li>
+          <li data-en="No additional software required"    data-pt="Nenhum software adicional necessário">No additional software required</li>
+          <li data-en="Free &amp; open source (GPL v3)"    data-pt="Gratuito e open source (GPL v3)">Free &amp; open source (GPL v3)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <strong>BeatMarker</strong> · <span data-en="Free UXP Plugin for Adobe Premiere Pro" data-pt="Plugin UXP Gratuito para Adobe Premiere Pro">Free UXP Plugin for Adobe Premiere Pro</span> · <a href="https://github.com/samaBR85/BeatMarker-PremierePlugin" target="_blank">Open Source (GPL v3)</a>
+    </div>
+    <div>
+      <span data-en="Made by" data-pt="Feito por">Made by</span> <a href="https://github.com/samaBR85" target="_blank">samaBR</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── i18n ──────────────────────────────────────────────────────────────────
+  const SUPPORTED = ['en', 'pt'];
+
+  function detectLang() {
+    // 1. Check localStorage (user manually chose)
+    const saved = localStorage.getItem('bm-lang');
+    if (saved && SUPPORTED.includes(saved)) return saved;
+    // 2. Browser language (covers PT-BR, pt, pt-PT → 'pt'; everything else → 'en')
+    const browser = (navigator.language || 'en').toLowerCase();
+    return browser.startsWith('pt') ? 'pt' : 'en';
+  }
+
+  function setLang(lang) {
+    localStorage.setItem('bm-lang', lang);
+    applyLang(lang);
+  }
+
+  function applyLang(lang) {
+    // Update all translatable elements
+    document.querySelectorAll('[data-en]').forEach(el => {
+      const text = el.getAttribute('data-' + lang);
+      if (text !== null) el.innerHTML = text;
+    });
+
+    // Update <html lang> attribute
+    document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+
+    // Update page title and meta description
+    if (lang === 'pt') {
+      document.title = 'BeatMarker — Detecção de beats para Premiere Pro';
+      document.querySelector('meta[name="description"]').content =
+        'Plugin UXP gratuito para Adobe Premiere Pro. Detecta BPM e cria marcadores coloridos no seu clipe de origem.';
+    } else {
+      document.title = 'BeatMarker — Beat detection for Premiere Pro';
+      document.querySelector('meta[name="description"]').content =
+        'Free UXP plugin for Adobe Premiere Pro. Auto-detects BPM and places colored markers on your source clip.';
+    }
+
+    // Update active button state
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.getElementById('btn-pt').classList.toggle('active', lang === 'pt');
+  }
+
+  // Run on load
+  applyLang(detectLang());
+</script>
+
+</body>
+</html>
