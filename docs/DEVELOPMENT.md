@@ -16,10 +16,11 @@ Official Adobe UXP documentation has gaps, inconsistencies, and outdated example
 6. [External links](#6-external-links)
 7. [Internationalization (i18n)](#7-internationalization-i18n)
 8. [Bundling with esbuild](#8-bundling-with-esbuild-for-code-using-npm-packages)
-9. [Pure JS audio decoding](#9-pure-js-audio-decoding)
-10. [Packaging and distribution](#10-packaging-and-distribution)
-11. [Best practices](#11-best-practices)
-12. [Pre-release checklist](#12-pre-release-checklist)
+9. [Pure JS audio decoding — WAV](#9-pure-js-audio-decoding--wav)
+10. [Pure JS audio decoding — MP3](#10-pure-js-audio-decoding--mp3)
+11. [Packaging and distribution](#11-packaging-and-distribution)
+12. [Best practices](#12-best-practices)
+13. [Pre-release checklist](#13-pre-release-checklist)
 
 ---
 
@@ -106,9 +107,12 @@ require('child_process')
 fs.readFileSync                // "Route not found" — use async fs.readFile
 fetch('file://...')            // blocked by sandbox
 WebAssembly with pthreads      // crashes the host app immediately
+WebAssembly single-threaded    // also crashes — even mpg123-decoder (no pthreads) kills Premiere Pro
 SharedArrayBuffer              // not available
 uxp.versions                   // returns {} — useless for version detection
 ```
+
+> ⚠️ **WASM is fully off-limits in UXP for Premiere Pro.** This includes single-threaded WASM. `mpg123-decoder` v1.x does not use pthreads but still crashes Premiere Pro on analysis. The only safe approach for audio decoding is **100% pure JavaScript**.
 
 ### ⚠️ Available but with different behavior
 
@@ -391,16 +395,18 @@ export default class FakeWorker {
 
 ---
 
-## 9. Pure JS audio decoding
+## 9. Pure JS audio decoding — WAV
 
 ### Why pure JS
 
 | Technology | Problem in UXP |
 |---|---|
-| WASM with pthreads | Crashes the host app immediately |
-| `mpg123-decoder` | Uses WASM → crash |
+| WASM with pthreads | Crashes Premiere Pro immediately |
+| `mpg123-decoder` v1.x (single-threaded WASM) | Still crashes Premiere Pro on analysis |
 | `AudioContext.decodeAudioData` | Does not exist in UXP |
 | Web Workers | `typeof Worker === 'undefined'` |
+
+**Only 100% pure JavaScript decoders work in UXP.**
 
 ### WAV decoder
 
@@ -476,7 +482,139 @@ function resample(mono, srcRate) {
 
 ---
 
-## 10. Packaging and distribution
+## 10. Pure JS audio decoding — MP3
+
+### Decoder: js-mp3
+
+The only viable MP3 decoder for UXP is [`js-mp3`](https://www.npmjs.com/package/js-mp3) — 100% pure JavaScript, no WASM, no workers. Bundle it with esbuild (see section 8).
+
+```js
+import Mp3 from 'js-mp3';
+import Mp3Frame from 'js-mp3/src/frame';
+
+function decodeMp3(arrayBuffer) {
+  const decoder = Mp3.newDecoder(arrayBuffer);
+  const nch        = decoder.frame.header.numberOfChannels();
+  const sampleRate = decoder.sampleRate;
+  const FRAME_STEP = 2; // take 1 sample every 2 — halves SR for speed, timing preserved
+
+  const mono = new Float32Array(Math.ceil(decoder.frameStarts.length * 1152 / FRAME_STEP));
+  let writePos = 0;
+
+  // Seek to first frame and decode with clean state (zero overlap)
+  decoder.source.seek(decoder.frameStarts[0]);
+  let prevFrame = null;
+  while (true) {
+    const result = Mp3Frame.read(decoder.source, decoder.source.pos, prevFrame);
+    if (result.err) break;
+    prevFrame = result.f;
+    const pcm  = result.f.decode();
+    const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.byteLength);
+    const n    = pcm.byteLength / (nch * 2);
+    for (let i = 0; i < n; i += FRAME_STEP) {
+      let sum = 0;
+      for (let c = 0; c < nch; c++) sum += view.getInt16((i * nch + c) * 2, true) / 32768;
+      mono[writePos++] = sum / nch;
+    }
+  }
+
+  // Strip timing offset (see section below)
+  const encoderDelay   = getMp3EncoderDelay(arrayBuffer);
+  const JS_MP3_STARTUP = 2070; // MDCT warm-up samples @ native SR (empirically calibrated)
+  const delaySamples   = Math.ceil((encoderDelay + JS_MP3_STARTUP) / FRAME_STEP);
+
+  return { mono: mono.subarray(delaySamples, writePos), sampleRate: sampleRate / FRAME_STEP };
+}
+```
+
+### MP3 timing offset — why it exists and how to fix it
+
+MP3 decoding introduces two sources of timing delay that must be stripped from the beginning of the decoded audio **before** running beat detection:
+
+| Source | Samples @ 44100 Hz | Description |
+|---|---|---|
+| **Encoder delay** | Varies (typically 576) | Silence added by the encoder at the start. Stored in the Xing/LAME header. |
+| **MDCT startup** | 2070 (constant for js-mp3) | IMDCT overlap-add warm-up. The decoder needs a few frames before its output is stable. Empirically measured by comparing js-mp3 beat positions against `mpg123-decoder` (reference). |
+
+If not corrected, beat markers land consistently late — ~1–4 frames depending on frame rate.
+
+**Calibration method used in v1.2:**
+
+1. Run `mpg123-decoder` (Node.js, reference quality) on the target MP3 → record `beat[0]`
+2. Run `js-mp3` pipeline on the same file → record `beat[0]`
+3. Difference = total offset to strip
+4. Subtract known encoder delay → remainder = `JS_MP3_STARTUP`
+5. Repeat until offset = 0.00s
+
+### Xing/LAME header parser
+
+Reads the encoder delay embedded in the first MP3 frame. Returns number of samples to discard at native sample rate. Fallback: 1105 (LAME default).
+
+```js
+function getMp3EncoderDelay(arrayBuffer) {
+  const data = new Uint8Array(arrayBuffer);
+  let i = 0;
+
+  // Skip ID3v2 tag if present
+  if (data[0] === 0x49 && data[1] === 0x44 && data[2] === 0x33) {
+    const id3Size = ((data[6]&0x7F)<<21)|((data[7]&0x7F)<<14)|((data[8]&0x7F)<<7)|(data[9]&0x7F);
+    i = 10 + id3Size;
+  }
+
+  // Find first MP3 sync word (0xFF 0xE*)
+  while (i < Math.min(data.length - 4, 32768)) {
+    if (data[i] === 0xFF && (data[i+1] & 0xE0) === 0xE0) break;
+    i++;
+  }
+  if (i >= data.length - 4) return 1105;
+
+  // Side information size: MPEG1 mono=17, stereo=32 | MPEG2/2.5 mono=9, stereo=17
+  const version  = (data[i+1] >> 3) & 3; // 3=MPEG1, 2=MPEG2, 0=MPEG2.5
+  const isMono   = ((data[i+3] >> 6) & 3) === 3;
+  const sideInfo = (version === 3) ? (isMono ? 17 : 32) : (isMono ? 9 : 17);
+
+  // Xing/Info tag starts at: frame_start + 4 (header) + sideInfo
+  const xOff = i + 4 + sideInfo;
+  if (xOff + 120 >= data.length) return 1105;
+
+  const tag = String.fromCharCode(data[xOff], data[xOff+1], data[xOff+2], data[xOff+3]);
+  if (tag !== 'Xing' && tag !== 'Info') return 1105; // CBR file — use fallback
+
+  // Walk optional Xing fields to find LAME header
+  const flags = (data[xOff+4]<<24)|(data[xOff+5]<<16)|(data[xOff+6]<<8)|data[xOff+7];
+  let lOff = xOff + 8;
+  if (flags & 1) lOff += 4;   // total frames
+  if (flags & 2) lOff += 4;   // total bytes
+  if (flags & 4) lOff += 100; // TOC
+  if (flags & 8) lOff += 4;   // quality
+
+  if (lOff + 27 >= data.length) return 1105;
+  const lTag = String.fromCharCode(data[lOff], data[lOff+1], data[lOff+2], data[lOff+3]);
+  if (lTag !== 'LAME' && lTag !== 'Lavc') return 1105;
+
+  // Encoder delay: 12 most-significant bits at lOff+21
+  const delay = ((data[lOff+21] << 4) | (data[lOff+22] >> 4)) & 0xFFF;
+  return delay > 0 ? delay : 1105;
+}
+```
+
+### Format auto-detection
+
+Detect WAV vs MP3 by magic bytes — do not rely on file extension:
+
+```js
+function detectFormat(buffer) {
+  const v = new Uint8Array(buffer, 0, 4);
+  if (v[0]===0x52 && v[1]===0x49 && v[2]===0x46 && v[3]===0x46) return 'wav'; // RIFF
+  if (v[0]===0x49 && v[1]===0x44 && v[2]===0x33) return 'mp3';                // ID3v2
+  if (v[0]===0xFF && (v[1] & 0xE0)===0xE0) return 'mp3';                      // sync word
+  return 'unknown';
+}
+```
+
+---
+
+## 12. Packaging and distribution
 
 ### Development (UXP Developer Tool)
 
@@ -499,7 +637,7 @@ function resample(mono, srcRate) {
 
 ---
 
-## 11. Best practices
+## 13. Best practices
 
 ### UI
 
@@ -530,7 +668,7 @@ function resample(mono, srcRate) {
 
 ---
 
-## 12. Pre-release checklist
+## 14. Pre-release checklist
 
 - [ ] `"app": "premierepro"` lowercase in manifest
 - [ ] `"host"` is an object, not an array
@@ -540,87 +678,6 @@ function resample(mono, srcRate) {
 - [ ] Semantic version in manifest (`1.0.0`)
 - [ ] Tested on Windows and macOS
 - [ ] No unnecessary `console.log` in production
-
----
-
-## 13. CSS pitfalls discovered in v1.1
-
-### ID selector `!important` beats class selector `!important`
-
-When both an ID rule and a class rule use `!important`, the ID rule wins due to specificity — even if the class is toggled dynamically later:
-
-```css
-/* WON'T override #b1's color: */
-#b1 { background-color: #d53a3a !important; }        /* ID — wins */
-.beat-box.inactive { background-color: #3a3a3a !important; } /* class — loses */
-```
-
-**Solution:** use inline styles for dynamic state:
-
-```js
-el.style.backgroundColor = isActive ? '#d53a3a' : '#3a3a3a';
-el.style.color            = isActive ? '#fff'    : '#555';
-// To restore original CSS: el.style.backgroundColor = '';
-```
-
-### Text descender clipping
-
-UXP can clip text descenders (tails of g, p, y, etc.) when `line-height` is tight. Always set `line-height: 1.5` or higher on italic or small text elements:
-
-```css
-#confidence-phrase { font-size: 11px; font-style: italic; line-height: 1.6; }
-```
-
-Adding `padding-bottom: 2px` on the element also helps as a safety margin.
-
-### Pre-filter before transactions — don't use `continue` inside callbacks
-
-Using `continue` to skip iterations inside `executeTransaction` async callbacks can be unreliable in UXP. Pre-filter arrays before the loop instead:
-
-```js
-// ❌ Avoid:
-await project.executeTransaction(async (ca) => {
-  for (let i = 0; i < slice.length; i++) {
-    if (!activeBeats.has(beatPos)) continue;
-    ca.addAction(...);
-  }
-});
-
-// ✅ Reliable:
-const filtered = beats
-  .map((t, i) => ({ t, pos: ((i + offset) % 4) + 1 }))
-  .filter(({ pos }) => activeBeats.has(pos));
-
-await project.executeTransaction(async (ca) => {
-  for (const { t, pos } of filtered) ca.addAction(...);
-});
-```
-
-### Marker name stores global beat index — not position
-
-Marker names store the **global beat index** (position in the original `beats` array), not the beat position (1–4). This allows correct recoloring for any offset and any active beat combination.
-
-```js
-// Creation — store global index:
-ca.addAction(clipMarkers.createAddMarkerAction('[BM] ' + globalIdx, ...));
-
-// Recoloring (all 4 beats active) — derive position from index + offset:
-const globalIdx = parseInt(marker.getName().replace('[BM] ', '')) || 0;
-const beatPos = ((globalIdx + offset) % 4) + 1;
-```
-
-#### Phase shift with selective beats — cycle colors, don't recreate
-
-When fewer than 4 beats are active, recoloring by globalIdx+offset causes the pattern to alternate between correct colors and all-blue (mathematically expected but confusing UX). The fix: cycle through the sorted active beats by marker index:
-
-```js
-// ✅ Selective beats — cycle within active set only:
-const sortedActiveBeats = [...activeBeats].sort((a, b) => a - b);
-const beatPos = sortedActiveBeats[(markerSortedIndex + offset) % sortedActiveBeats.length];
-
-// ❌ Don't use globalIdx for selective — causes "all blue" every other click:
-const beatPos = ((globalIdx + offset) % 4) + 1;
-```
 - [ ] User-facing error messages are clear and actionable
 - [ ] Pre-compiled bundle included in the plugin folder
 
