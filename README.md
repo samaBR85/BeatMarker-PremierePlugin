@@ -134,12 +134,13 @@ BeatMarker-PremierePlugin/
 │
 ├── experiments/
 │   ├── exp-a-beat-detection/      ← Node.js proof of concept (mpg123 + music-tempo)
-│   └── exp-b-uxp-viability/       ← Bundle source
-│       ├── src/
-│       │   ├── analysis.js        ← Pipeline: WAV decoder + resample + beat detection
-│       │   └── stubs/             ← Polyfills for modules missing in UXP
-│       ├── build.js               ← esbuild config
-│       └── package.json
+│   ├── exp-b-uxp-viability/       ← Bundle source (active)
+│   │   ├── src/
+│   │   │   ├── analysis.js        ← Pipeline: WAV + MP3 decoder + resample + beat detection
+│   │   │   └── stubs/             ← Polyfills for modules missing in UXP
+│   │   ├── build.js               ← esbuild config
+│   │   └── package.json
+│   └── exp-c-uxp-mp3viability/    ← mpg123-decoder (WASM) — crashes Premiere; abandoned
 │
 ├── screenshots/                   ← Usage screenshots
 ├── assets/                        ← Icon source files
