@@ -6301,7 +6301,42 @@ function decodeMp3(arrayBuffer) {
     prevFrame = result.f;
     storeFrame(prevFrame);
   }
-  return { mono: mono.subarray(0, writePos), sampleRate: sampleRate / FRAME_STEP };
+  const encoderDelay = getMp3EncoderDelay(arrayBuffer);
+  const JS_MP3_STARTUP = 2070;
+  const delaySamples = Math.ceil((encoderDelay + JS_MP3_STARTUP) / FRAME_STEP);
+  return { mono: mono.subarray(delaySamples, writePos), sampleRate: sampleRate / FRAME_STEP };
+}
+function getMp3EncoderDelay(arrayBuffer) {
+  const data = new Uint8Array(arrayBuffer);
+  let i = 0;
+  if (data[0] === 73 && data[1] === 68 && data[2] === 51) {
+    const id3Size = (data[6] & 127) << 21 | (data[7] & 127) << 14 | (data[8] & 127) << 7 | data[9] & 127;
+    i = 10 + id3Size;
+  }
+  while (i < Math.min(data.length - 4, 32768)) {
+    if (data[i] === 255 && (data[i + 1] & 224) === 224) break;
+    i++;
+  }
+  if (i >= data.length - 4) return 1105;
+  const version = data[i + 1] >> 3 & 3;
+  const chanMode = data[i + 3] >> 6 & 3;
+  const isMono = chanMode === 3;
+  const sideInfo = version === 3 ? isMono ? 17 : 32 : isMono ? 9 : 17;
+  const xOff = i + 4 + sideInfo;
+  if (xOff + 120 >= data.length) return 1105;
+  const tag = String.fromCharCode(data[xOff], data[xOff + 1], data[xOff + 2], data[xOff + 3]);
+  if (tag !== "Xing" && tag !== "Info") return 1105;
+  const flags = data[xOff + 4] << 24 | data[xOff + 5] << 16 | data[xOff + 6] << 8 | data[xOff + 7];
+  let lOff = xOff + 8;
+  if (flags & 1) lOff += 4;
+  if (flags & 2) lOff += 4;
+  if (flags & 4) lOff += 100;
+  if (flags & 8) lOff += 4;
+  if (lOff + 27 >= data.length) return 1105;
+  const lTag = String.fromCharCode(data[lOff], data[lOff + 1], data[lOff + 2], data[lOff + 3]);
+  if (lTag !== "LAME" && lTag !== "Lavc") return 1105;
+  const encoderDelay = (data[lOff + 21] << 4 | data[lOff + 22] >> 4) & 4095;
+  return encoderDelay > 0 ? encoderDelay : 1105;
 }
 function detectFormat(buffer) {
   const view = new Uint8Array(buffer, 0, 4);
