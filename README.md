@@ -12,11 +12,17 @@
 
 ## ✨ Features
 
-- 🎵 **Detects BPM and beats** in WAV files with one click
+- 🎵 **Detects BPM and beats** in WAV and MP3 files with one click
 - 🎨 **Creates colored markers** on the source clip, visually distinguishing each beat position:
-  - 🔴 Beat **1** → Red
-  - 🔵 Beats **2 & 4** → Blue
-  - 🟡 Beat **3** → Yellow
+  - 🔴 Beat **1** → Red — **Downbeat** (strongest beat of the bar)
+  - 🔵 Beats **2 & 4** → Blue — **Backbeats** (where the snare typically hits)
+  - 🟡 Beat **3** → Yellow — **Secondary downbeat** (mid-bar emphasis)
+  > Marker colors are fixed and cannot be changed — they map directly to beat position.
+- 🎯 **BPM Confidence Indicator** — after analysis, shows how reliable the beat detection was:
+  - 🟢 High (>85%) — rock solid grid, markers ready
+  - 🟡 Medium (60–85%) — some tempo variation, worth a check
+  - 🔴 Low (<60%) — tempo is unpredictable, markers may drift
+- 🎛️ **Beat selection** — tap the **1 2 3 4** buttons to choose which beats to mark (all on by default)
 - ◀ ▶ **Phase adjustment** — shifts which beat is the "1" without re-analyzing
 - 🗑️ **Remove markers** with one click (any clip selected in the Project panel)
 - 🌐 **Bilingual (ENG / PT-BR)** — UI language automatically detected from system locale
@@ -37,9 +43,22 @@ Video editors who cut to the beat — music videos, trailers, reels, sync edits.
 |------|--------|
 | **1** | Open the **BeatMarker** panel (`Window → Extensions → BeatMarker`) and select a `.WAV` clip in the Project panel |
 | **2** | Click **ANALYZE SELECTED CLIP** and wait for the BPM to be detected |
-| **3** | Click **CREATE MARKERS ON CLIP** — colored markers appear on the clip |
-| **4** | If beat "1" is in the wrong place, use **◀ ▶** to shift the phase |
-| **5** | To start over, click **REMOVE MARKERS** |
+| **3** | Check the **confidence indicator** — if it's red or yellow, markers may need manual review |
+| **4** | *(Optional)* Tap the **1 2 3 4** beat buttons to choose which positions to mark |
+| **5** | Click **CREATE MARKERS ON CLIP** — colored markers appear on the clip |
+| **6** | If beat "1" is in the wrong place, use **◀ ▶** to shift the phase |
+| **7** | To start over, click **REMOVE MARKERS** |
+
+### ⌨️ Navigating markers in Premiere Pro
+
+Once markers are placed, use these standard Premiere shortcuts to jump between them:
+
+| Action | Windows | macOS |
+|--------|---------|-------|
+| **Next marker** | `Shift + M` | `Shift + M` |
+| **Previous marker** | `Ctrl + Shift + M` | `Cmd + Shift + M` |
+
+These shortcuts work both in the **Timeline** and inside a clip in the **Source Monitor**.
 
 <details>
 <summary>📸 View individual steps</summary>
@@ -168,6 +187,7 @@ The UI language is detected automatically from the system locale — no configur
 
 - Only `.WAV` files are accepted (**4/4 time signature** only)
 - No support for variable tempo (rubato, accelerando, ritardando)
+- Marker colors are fixed — 🔴 downbeat, 🔵 backbeats, 🟡 secondary downbeat. Premiere Pro does not expose a color picker API for markers created by plugins.
 
 ---
 

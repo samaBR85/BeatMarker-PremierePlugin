@@ -147,7 +147,71 @@ function decodeMp3(arrayBuffer) {
     storeFrame(prevFrame);
   }
 
-  return { mono: mono.subarray(0, writePos), sampleRate: sampleRate / FRAME_STEP };
+  // Descartar samples iniciais para corrigir offset de timing no MP3:
+  //   encoderDelay  — delay do encoder (lido do header Xing/LAME, tipicamente 576)
+  //   JS_MP3_STARTUP — delay adicional do MDCT/overlap-add do js-mp3 (empiricamente
+  //                    medido: 1188 samples @ 44100 Hz ≈ 1 frame + 1 granule de warm-up)
+  const encoderDelay = getMp3EncoderDelay(arrayBuffer);
+  const JS_MP3_STARTUP = 2070; // samples @ sampleRate nativo
+  const delaySamples = Math.ceil((encoderDelay + JS_MP3_STARTUP) / FRAME_STEP);
+
+  return { mono: mono.subarray(delaySamples, writePos), sampleRate: sampleRate / FRAME_STEP };
+}
+
+/**
+ * Lê o encoder delay do header Xing/LAME embutido no primeiro frame MP3.
+ * O LAME (e a maioria dos encoders modernos) armazena o delay em 12 bits
+ * no header LAME. Retorna o número de samples a descartar no início.
+ * Fallback: 1105 samples (delay padrão do LAME @ 44100 Hz).
+ */
+function getMp3EncoderDelay(arrayBuffer) {
+  const data = new Uint8Array(arrayBuffer);
+  let i = 0;
+
+  // Pular tag ID3v2 se presente
+  if (data[0] === 0x49 && data[1] === 0x44 && data[2] === 0x33) {
+    const id3Size = ((data[6] & 0x7F) << 21) | ((data[7] & 0x7F) << 14) |
+                   ((data[8] & 0x7F) << 7)  |  (data[9] & 0x7F);
+    i = 10 + id3Size;
+  }
+
+  // Encontrar primeiro sync word MP3
+  while (i < Math.min(data.length - 4, 32768)) {
+    if (data[i] === 0xFF && (data[i + 1] & 0xE0) === 0xE0) break;
+    i++;
+  }
+  if (i >= data.length - 4) return 1105;
+
+  // Tamanho do side information (MPEG1: mono=17, stereo=32 | MPEG2/2.5: mono=9, stereo=17)
+  const version    = (data[i + 1] >> 3) & 3;  // 3=MPEG1, 2=MPEG2, 0=MPEG2.5
+  const chanMode   = (data[i + 3] >> 6) & 3;  // 3=mono
+  const isMono     = chanMode === 3;
+  const sideInfo   = (version === 3) ? (isMono ? 17 : 32) : (isMono ? 9 : 17);
+
+  // Xing/Info tag começa após: 4 bytes header + sideInfo bytes
+  const xOff = i + 4 + sideInfo;
+  if (xOff + 120 >= data.length) return 1105;
+
+  const tag = String.fromCharCode(data[xOff], data[xOff+1], data[xOff+2], data[xOff+3]);
+  if (tag !== 'Xing' && tag !== 'Info') return 1105;
+
+  // Flags indicam quais campos opcionais existem antes do header LAME
+  const flags = (data[xOff+4] << 24) | (data[xOff+5] << 16) |
+                (data[xOff+6] <<  8) |  data[xOff+7];
+  let lOff = xOff + 8;
+  if (flags & 1) lOff += 4;   // total frames
+  if (flags & 2) lOff += 4;   // total bytes
+  if (flags & 4) lOff += 100; // TOC
+  if (flags & 8) lOff += 4;   // quality
+
+  if (lOff + 27 >= data.length) return 1105;
+
+  const lTag = String.fromCharCode(data[lOff], data[lOff+1], data[lOff+2], data[lOff+3]);
+  if (lTag !== 'LAME' && lTag !== 'Lavc') return 1105;
+
+  // Encoder delay: 12 bits mais significativos do par de bytes em lOff+21
+  const encoderDelay = ((data[lOff + 21] << 4) | (data[lOff + 22] >> 4)) & 0xFFF;
+  return encoderDelay > 0 ? encoderDelay : 1105;
 }
 
 /** Detecta o formato pelo magic bytes */

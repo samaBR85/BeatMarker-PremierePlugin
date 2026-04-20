@@ -9,7 +9,7 @@ const LANG = (navigator.language || 'en').startsWith('pt') ? 'pt' : 'en';
 const STRINGS = {
   pt: {
     // UI estática
-    clipHint:    'Selecione um clip .WAV no painel do projeto',
+    clipHint:    'Selecione um clip .WAV ou .MP3 no painel do projeto',
     clipHint2:   'e clique em ANALISAR CLIPE SELECIONADO',
     bpmLabel:    'BPM · 4/4',
     btnAnalyze:  'ANALISAR CLIPE SELECIONADO',
@@ -19,6 +19,7 @@ const STRINGS = {
     logHide:     'esconder log ▴',
     createdBy:   'criado por',
     ready:       'Pronto',
+    beatHint:    '✦ Toque nos beats para ligar/desligar',
     // Estados dos botões
     analyzing:   'ANALISANDO...',
     creating:    'CRIANDO...',
@@ -40,7 +41,7 @@ const STRINGS = {
     errSelectClip:  'Selecione um clip no painel Project.',
     errNotMedia:    'Item selecionado não é um clip de mídia.',
     errCastFail:    'Não foi possível converter para ClipProjectItem.',
-    errFormat:      ext => `Formato não suportado: ${ext}. Use um arquivo .WAV.`,
+    errFormat:      ext => `Formato não suportado: ${ext}. Use .WAV ou .MP3.`,
     errNoMarkers:   'Não foi possível obter markers do clip.',
     errNoAccess:    'Não foi possível acessar o clip.',
     errNoDelete:    'Erro: método de delete não encontrado',
@@ -62,9 +63,49 @@ const STRINGS = {
     subReading:     ext        => `${ext} · lendo arquivo...`,
     subDetecting:   (ext, mb)  => `${ext} · ${mb} MB · detectando beats...`,
     subDone:        (ext, mb, n) => `${ext} · ${mb} MB · ${n} beats`,
+    confidenceCta: 'Pronto — crie os markers abaixo',
+    // Subtítulos de confiança (PT-BR)
+    confidenceSubs: {
+      high: [
+        'Consistência de tempo perfeita',
+        'Os markers cairão exatamente no beat',
+        'Confiança de análise muito alta',
+        'BPM detectado com precisão',
+        'Praticamente zero variação de tempo',
+        'Tempo limpo e consistente detectado',
+        'Grade de beats sólida como rocha',
+        'Excelente consistência de beats',
+        'Markers confiáveis à frente',
+        'Alta confiança — markers prontos',
+      ],
+      mid: [
+        'Alguma variação de tempo detectada',
+        'Consistência moderada — verifique os markers',
+        'Intervalos de beat levemente irregulares',
+        'Boa confiança, pequenas inconsistências',
+        'Tempo varia levemente',
+        'Feel de performance ao vivo detectado',
+        'Utilizável, mas verifique os pontos-chave',
+        'Consistência de tempo mista',
+        'Confiança média — revise os markers',
+        'BPM aproximado — algum drift possível',
+      ],
+      low: [
+        'Alta variação de tempo — markers podem ser não-confiáveis',
+        'Algoritmo teve dificuldade em encontrar um beat estável',
+        'Tempo livre — markers vão derivar',
+        'Irregular demais para detecção confiável',
+        'Nenhum tempo consistente encontrado',
+        'Variação de tempo muito alta detectada',
+        'Baixa confiança — use os markers por sua conta e risco',
+        'Consistência de beat muito baixa para markers confiáveis',
+        'Análise falhou em encontrar um tempo estável',
+        'Inconsistência de tempo extrema detectada',
+      ],
+    },
   },
   en: {
-    clipHint:    'Select a .WAV clip in the Project panel',
+    clipHint:    'Select a .WAV or .MP3 clip in the Project panel',
     clipHint2:   'then click ANALYZE SELECTED CLIP',
     bpmLabel:    'BPM · 4/4',
     btnAnalyze:  'ANALYZE SELECTED CLIP',
@@ -74,6 +115,7 @@ const STRINGS = {
     logHide:     'hide log ▴',
     createdBy:   'created by',
     ready:       'Ready',
+    beatHint:    '✦ Tap beats to toggle on/off',
     analyzing:   'ANALYZING...',
     creating:    'CREATING...',
     removing:    'REMOVING...',
@@ -92,7 +134,7 @@ const STRINGS = {
     errSelectClip:  'Select a clip in the Project panel.',
     errNotMedia:    'Selected item is not a media clip.',
     errCastFail:    'Could not convert to ClipProjectItem.',
-    errFormat:      ext => `Unsupported format: ${ext}. Use a .WAV file.`,
+    errFormat:      ext => `Unsupported format: ${ext}. Use .WAV or .MP3.`,
     errNoMarkers:   'Could not get clip markers.',
     errNoAccess:    'Could not access clip.',
     errNoDelete:    'Error: delete method not found',
@@ -112,6 +154,46 @@ const STRINGS = {
     subReading:     ext        => `${ext} · reading file...`,
     subDetecting:   (ext, mb)  => `${ext} · ${mb} MB · detecting beats...`,
     subDone:        (ext, mb, n) => `${ext} · ${mb} MB · ${n} beats`,
+    confidenceCta: 'Ready — create your markers below',
+    // Confidence subtitles (EN)
+    confidenceSubs: {
+      high: [
+        'Perfect tempo consistency',
+        'Markers will land exactly on beat',
+        'Analysis confidence is very high',
+        'BPM detected with precision',
+        'Virtually zero tempo variation',
+        'Clean, consistent tempo detected',
+        'Beat grid is rock solid',
+        'Excellent beat consistency',
+        'Reliable markers ahead',
+        'High confidence — markers ready',
+      ],
+      mid: [
+        'Some tempo variation detected',
+        'Moderate consistency — check the markers',
+        'Beat intervals are slightly uneven',
+        'Good confidence, minor inconsistencies',
+        'Tempo varies slightly',
+        'Live performance feel detected',
+        'Usable, but verify key points',
+        'Mixed tempo consistency',
+        'Medium confidence — review markers',
+        'Approximate BPM — some drift possible',
+      ],
+      low: [
+        'High tempo variation — markers may be unreliable',
+        'Algorithm struggled to find a steady beat',
+        'Free tempo — markers will drift',
+        'Too irregular for reliable detection',
+        'No consistent tempo found',
+        'Very high tempo variation detected',
+        'Low confidence — use markers at your own risk',
+        'Beat consistency too low for reliable markers',
+        'Analysis failed to find a steady tempo',
+        'Extreme tempo inconsistency detected',
+      ],
+    },
   },
 };
 
@@ -143,7 +225,28 @@ btnApply.textContent     = T.btnApply;
 btnClear.textContent     = T.btnClear;
 btnLogToggle.textContent = T.logShow;
 createdByEl.textContent  = T.createdBy;
+document.getElementById('beat-hint').textContent = T.beatHint;
 statusEl.textContent     = T.ready;
+
+// ── Beat toggles ─────────────────────────────────────────────────────────────
+const activeBeats = new Set([1, 2, 3, 4]);
+const BEAT_COLORS = { 1: '#d53a3a', 2: '#4084e5', 3: '#d7ab2f', 4: '#4084e5' };
+
+[1, 2, 3, 4].forEach(n => {
+  const el = document.getElementById('b' + n);
+  el.onclick = () => {
+    if (activeBeats.has(n)) {
+      if (activeBeats.size === 1) return;
+      activeBeats.delete(n);
+      el.style.backgroundColor = '#3a3a3a';
+      el.style.color = '#555';
+    } else {
+      activeBeats.add(n);
+      el.style.backgroundColor = BEAT_COLORS[n];
+      el.style.color = '#fff';
+    }
+  };
+});
 
 // ── Cores fixas dos markers ───────────────────────────────────────────────────
 // beat 1 → Vermelho (1) · beats 2/4 → Azul (6) · beat 3 → Amarelo (4)
@@ -185,6 +288,83 @@ document.getElementById('link-sama').onclick = () => {
   require('uxp').shell.openExternal('https://github.com/samaBR85');
 };
 
+// ── Confiança do BPM ──────────────────────────────────────────────────────────
+const confidenceWrap   = document.getElementById('confidence-wrap');
+const confidenceBar    = document.getElementById('confidence-bar');
+const confidencePhrase = document.getElementById('confidence-phrase');
+const confidenceSub    = document.getElementById('confidence-sub');
+const confidenceCta    = document.getElementById('confidence-cta');
+
+const CONFIDENCE_PHRASES = {
+  high: [
+    "Not rushing, not dragging.",
+    "In the pocket.",
+    "Fletcher would approve.",
+    "That's the one.",
+    "Like a metronome.",
+    "Studio take.",
+    "One take wonder.",
+    "This is what we came for.",
+    "Now we're cooking.",
+    "Tight.",
+  ],
+  mid: [
+    "Were you rushing or were you dragging?",
+    "Close enough for jazz?",
+    "A little loosey-goosey.",
+    "Almost there. Almost.",
+    "The feel is there, the grid isn't.",
+    "Human, but maybe too human.",
+    "I can work with this.",
+    "Somewhere between a click and a vibe.",
+    "Not bad. Not great.",
+    "It's giving... approximately.",
+  ],
+  low: [
+    "Not quite my tempo.",
+    "This is not a tempo, it's a suggestion.",
+    "Rubato nightmare.",
+    "Charlie Parker would've done something with this.",
+    "Were you even playing to a click?",
+    "Bold choice.",
+    "This one's on you.",
+    "The grid has left the building.",
+    "Even Fletcher couldn't save this.",
+    "Somewhere, a drummer is being yelled at.",
+  ],
+};
+
+function calculateConfidence(beats) {
+  if (beats.length < 4) return 0;
+  const intervals = [];
+  for (let i = 1; i < beats.length; i++) intervals.push(beats[i] - beats[i - 1]);
+  const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+  const variance = intervals.reduce((a, b) => a + (b - mean) ** 2, 0) / intervals.length;
+  const cv = Math.sqrt(variance) / mean;
+  return Math.max(0, Math.min(100, Math.round((1 - cv / 0.2) * 100)));
+}
+
+function showConfidence(beats) {
+  const pct = calculateConfidence(beats);
+  const level = pct > 85 ? 'high' : pct >= 60 ? 'mid' : 'low';
+  const color  = level === 'high' ? '#34c759' : level === 'mid' ? '#d7ab2f' : '#d53a3a';
+  const idx    = Math.floor(Math.random() * 10);
+  const phrase = CONFIDENCE_PHRASES[level][idx];
+  const sub    = T.confidenceSubs[level][idx];
+
+  confidenceBar.style.width      = pct + '%';
+  confidenceBar.style.background = color;
+  confidencePhrase.textContent   = `"${phrase}"`;
+  confidenceSub.textContent      = sub;
+  confidenceCta.textContent      = T.confidenceCta;
+  confidenceWrap.classList.add('visible');
+}
+
+function hideConfidence() {
+  confidenceWrap.classList.remove('visible');
+  confidenceBar.style.width = '0%';
+}
+
 // ── Carregar bundle de análise ────────────────────────────────────────────────
 let analyzeAudio = null;
 try {
@@ -208,6 +388,7 @@ btnAnalyze.onclick = async () => {
   setProgress(true);
   setStatus(T.statusGetting, 'info');
   bpmValEl.textContent = '--';
+  hideConfidence();
 
   state = null;
 
@@ -227,7 +408,7 @@ btnAnalyze.onclick = async () => {
 
     const mediaPath = await clipPI.getMediaFilePath();
     const ext = mediaPath.split('.').pop().toLowerCase();
-    if (ext !== 'wav') throw new Error(T.errFormat(ext.toUpperCase()));
+    if (ext !== 'wav' && ext !== 'mp3') throw new Error(T.errFormat(ext.toUpperCase()));
 
     clipNameEl.textContent  = clipItem.name;
     clipSubEl.textContent   = T.subReading(ext.toUpperCase());
@@ -255,6 +436,7 @@ btnAnalyze.onclick = async () => {
     bpmValEl.textContent  = bpm.toFixed(1);
     clipSubEl.textContent = T.subDone(ext.toUpperCase(), mb, beats.length);
     setStatus(T.statusDone, 'ok');
+    showConfidence(beats);
 
     btnApply.disabled = false;
 
@@ -311,15 +493,18 @@ btnApply.onclick = async () => {
       }
     }
 
+    const beatsWithPos = beats
+      .map((t, i) => ({ t, globalIdx: i, pos: ((i + offset) % 4) + 1 }))
+      .filter(({ pos }) => activeBeats.has(pos));
+
     const BATCH = 50;
-    for (let b = 0; b < beats.length; b += BATCH) {
-      const slice = beats.slice(b, b + BATCH);
+    for (let b = 0; b < beatsWithPos.length; b += BATCH) {
+      const slice = beatsWithPos.slice(b, b + BATCH);
       await project.executeTransaction(async (ca) => {
-        for (let i = 0; i < slice.length; i++) {
-          const beatPos = ((b + i + offset) % 4) + 1;
+        for (const { t, globalIdx } of slice) {
           ca.addAction(clipMarkers.createAddMarkerAction(
-            '[BM] ' + beatPos, 'Comment',
-            ppro.TickTime.createWithSeconds(slice[i]),
+            '[BM] ' + globalIdx, 'Comment',
+            ppro.TickTime.createWithSeconds(t),
             ppro.TickTime.createWithSeconds(0),
             'beatmarker'
           ));
@@ -334,7 +519,8 @@ btnApply.onclick = async () => {
       const slice = bmMarkers.slice(b, b + BATCH);
       await project.executeTransaction(async (ca) => {
         for (let i = 0; i < slice.length; i++) {
-          const beatPos = ((b + i) % 4) + 1;
+          const globalIdx = parseInt((slice[i].getName ? slice[i].getName() : '').replace('[BM] ', '')) || 0;
+          const beatPos = ((globalIdx + offset) % 4) + 1;
           const colorIdx = beatPos === 1 ? COLOR_BEAT1 : beatPos === 3 ? COLOR_BEAT3 : COLOR_BEAT24;
           ca.addAction(slice[i].createSetColorByIndexAction(colorIdx));
         }
@@ -373,20 +559,29 @@ async function recolorMarkers() {
 
   if (bmMarkers.length === 0) { setStatus(T.statusNone, 'warn'); return; }
 
+  // Com beats seletivos, cicla as cores apenas dentro dos beats ativos.
+  // Com todos os 4 beats, usa o globalIdx armazenado no nome.
+  const sortedActiveBeats = [...activeBeats].sort((a, b) => a - b);
+  const selective = activeBeats.size < 4;
+
   const BATCH = 50;
   for (let b = 0; b < bmMarkers.length; b += BATCH) {
     const slice = bmMarkers.slice(b, b + BATCH);
     await project.executeTransaction(async (ca) => {
       for (let i = 0; i < slice.length; i++) {
-        const beatPos = ((b + i + offset) % 4) + 1;
+        let beatPos;
+        if (selective) {
+          beatPos = sortedActiveBeats[(b + i + offset) % sortedActiveBeats.length];
+        } else {
+          const globalIdx = parseInt((slice[i].getName ? slice[i].getName() : '').replace('[BM] ', '')) || 0;
+          beatPos = ((globalIdx + offset) % 4) + 1;
+        }
         const colorIdx = beatPos === 1 ? COLOR_BEAT1 : beatPos === 3 ? COLOR_BEAT3 : COLOR_BEAT24;
         ca.addAction(slice[i].createSetColorByIndexAction(colorIdx));
-        if (typeof slice[i].createSetNameAction === 'function') {
-          ca.addAction(slice[i].createSetNameAction('[BM] ' + beatPos));
-        }
       }
     }, 'BeatMarker recolor');
   }
+
   log(T.logRecolored(offset), 'ok');
   setStatus(T.statusAdjusted, 'ok');
 }

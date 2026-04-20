@@ -1,0 +1,17 @@
+{
+  "name": "exp-c-uxp-mp3viability",
+  "version": "1.0.0",
+  "description": "POC: MP3 decoding in UXP environment for BeatMarker v1.2",
+  "main": "src/test-node.js",
+  "scripts": {
+    "test": "node src/test-node.js",
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "mpg123-decoder": "^1.0.3",
+    "music-tempo": "^1.0.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  }
+}

@@ -379,7 +379,7 @@ export default class FakeWorker {
 | Technology | Problem in UXP |
 |---|---|
 | WASM with pthreads | Crashes the host app immediately |
-| `mpg123-decoder` | Uses WASM → crash |
+| `mpg123-decoder` v1.x | Single-threaded WASM — still crashes Premiere Pro on analysis |
 | `AudioContext.decodeAudioData` | Does not exist in UXP |
 | Web Workers | `typeof Worker === 'undefined'` |
 
@@ -431,6 +431,91 @@ function decodeWav(arrayBuffer) {
     mono[i] = sum / numChannels;
   }
   return { mono, sampleRate };
+}
+```
+
+### MP3 decoder (js-mp3, pure JS)
+
+```js
+import Mp3 from 'js-mp3';
+import Mp3Frame from 'js-mp3/src/frame';
+
+function decodeMp3(arrayBuffer) {
+  const decoder = Mp3.newDecoder(arrayBuffer);
+  const nch = decoder.frame.header.numberOfChannels();
+  const sampleRate = decoder.sampleRate;
+  const FRAME_STEP = 2; // downsample 2:1 within each frame (perf optimization)
+
+  const mono = new Float32Array(Math.ceil(decoder.frameStarts.length * 1152 / FRAME_STEP));
+  let writePos = 0;
+
+  decoder.source.seek(decoder.frameStarts[0]);
+  let prevFrame = null;
+  while (true) {
+    const result = Mp3Frame.read(decoder.source, decoder.source.pos, prevFrame);
+    if (result.err) break;
+    prevFrame = result.f;
+    const pcm = result.f.decode();
+    const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.byteLength);
+    const n = pcm.byteLength / (nch * 2);
+    for (let i = 0; i < n; i += FRAME_STEP) {
+      let sum = 0;
+      for (let c = 0; c < nch; c++) sum += view.getInt16((i * nch + c) * 2, true) / 32768;
+      mono[writePos++] = sum / nch;
+    }
+  }
+
+  // Strip encoder delay + js-mp3 MDCT startup delay
+  const encoderDelay  = getMp3EncoderDelay(arrayBuffer); // from Xing/LAME header
+  const JS_MP3_STARTUP = 2070; // empirically measured MDCT warm-up samples @ native SR
+  const delaySamples  = Math.ceil((encoderDelay + JS_MP3_STARTUP) / FRAME_STEP);
+
+  return { mono: mono.subarray(delaySamples, writePos), sampleRate: sampleRate / FRAME_STEP };
+}
+```
+
+#### MP3 timing calibration
+
+The `js-mp3` decoder introduces two timing offsets that must be stripped before beat detection:
+
+| Source | Samples (44100 Hz) | Explanation |
+|---|---|---|
+| Encoder delay | 576 (typical LAME/FFmpeg) | Read from Xing/LAME header — varies per file |
+| MDCT startup | 2070 | js-mp3 IMDCT overlap-add warm-up — constant |
+| **Total** | **2646** | `(encoderDelay + 2070) / FRAME_STEP` stored samples |
+
+**Calibration method:** compare first beat positions from js-mp3 vs `mpg123-decoder` (reference) on the same file. Iterate `JS_MP3_STARTUP` until offset = 0.00s.
+
+#### Xing/LAME header parser
+
+```js
+function getMp3EncoderDelay(arrayBuffer) {
+  const data = new Uint8Array(arrayBuffer);
+  let i = 0;
+  // Skip ID3v2 tag if present
+  if (data[0] === 0x49 && data[1] === 0x44 && data[2] === 0x33) {
+    const id3Size = ((data[6]&0x7F)<<21)|((data[7]&0x7F)<<14)|((data[8]&0x7F)<<7)|(data[9]&0x7F);
+    i = 10 + id3Size;
+  }
+  // Find first MP3 sync word
+  while (i < Math.min(data.length-4, 32768)) {
+    if (data[i] === 0xFF && (data[i+1] & 0xE0) === 0xE0) break;
+    i++;
+  }
+  const version  = (data[i+1] >> 3) & 3;
+  const isMono   = ((data[i+3] >> 6) & 3) === 3;
+  const sideInfo = (version === 3) ? (isMono ? 17 : 32) : (isMono ? 9 : 17);
+  const xOff = i + 4 + sideInfo;
+  const tag = String.fromCharCode(data[xOff],data[xOff+1],data[xOff+2],data[xOff+3]);
+  if (tag !== 'Xing' && tag !== 'Info') return 1105; // fallback
+  const flags = (data[xOff+4]<<24)|(data[xOff+5]<<16)|(data[xOff+6]<<8)|data[xOff+7];
+  let lOff = xOff + 8;
+  if (flags & 1) lOff += 4; if (flags & 2) lOff += 4;
+  if (flags & 4) lOff += 100; if (flags & 8) lOff += 4;
+  const lTag = String.fromCharCode(data[lOff],data[lOff+1],data[lOff+2],data[lOff+3]);
+  if (lTag !== 'LAME' && lTag !== 'Lavc') return 1105;
+  const delay = ((data[lOff+21] << 4) | (data[lOff+22] >> 4)) & 0xFFF;
+  return delay > 0 ? delay : 1105;
 }
 ```
 
