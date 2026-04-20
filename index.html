@@ -151,7 +151,19 @@
     .hero-sub {
       font-size: 13px;
       color: #555;
-      margin-bottom: 48px;
+      margin-bottom: 16px;
+    }
+    .hero-formats {
+      font-size: clamp(16px, 2.5vw, 22px);
+      font-style: italic;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 1px;
+      margin-bottom: 40px;
+      background: rgba(213,58,58,0.18);
+      display: inline-block;
+      padding: 4px 18px;
+      border-radius: 4px;
     }
     .hero-waveform {
       margin-bottom: 20px;
@@ -451,6 +463,7 @@
   <h1><span class="b">B</span><span class="e">e</span><span class="a">a</span><span class="t">t</span><span class="marker">Marker</span></h1>
   <p class="hero-tagline" data-en="Auto-detects BPM and places colored markers on your source clip. Cut to the beat — automatically." data-pt="Detecta o BPM automaticamente e cria marcadores coloridos no seu clipe. Corte no beat — sem esforço.">Auto-detects BPM and places colored markers on your source clip. Cut to the beat — automatically.</p>
   <p class="hero-sub" data-en="No subscription. No account. No dependencies." data-pt="Sem assinatura. Sem cadastro. Sem dependências.">No subscription. No account. No dependencies.</p>
+  <p class="hero-formats" data-en="SUPPORTS .MP3 and .WAV files" data-pt="SUPORTA arquivos .MP3 e .WAV">SUPPORTS .MP3 and .WAV files</p>
   <div class="hero-waveform">
     <img src="screenshots/sample.png" alt="Waveform with beat markers" />
   </div>
