@@ -6,11 +6,11 @@
 
 ## What it is
 
-**BeatMarker** is a UXP plugin for Adobe Premiere Pro that detects the BPM and beat positions of a WAV audio file and creates colored markers directly on the source clip in the Project panel. Built for video editors who cut to the beat — music videos, trailers, reels, sync edits.
+**BeatMarker** is a UXP plugin for Adobe Premiere Pro that detects the BPM and beat positions of a WAV or MP3 audio file and creates colored markers directly on the source clip in the Project panel. Built for video editors who cut to the beat — music videos, trailers, reels, sync edits.
 
 - **Author:** samaBR ([@samaBR85](https://github.com/samaBR85))
 - **Repo:** https://github.com/samaBR85/BeatMarker-PremierePlugin
-- **Current version:** 1.1.0
+- **Current version:** 1.2.0
 - **Plugin ID (Adobe Exchange):** `8b52c087`
 - **License:** GPL v3
 
@@ -28,12 +28,17 @@ BeatMarker-PremierePlugin/
 │   └── analysis-bundle.js        ← Pre-compiled bundle (WAV decoder + music-tempo)
 │
 ├── experiments/
-│   ├── exp-a-beat-detection/      ← Node.js proof of concept
-│   └── exp-b-uxp-viability/       ← Bundle source (esbuild)
+│   ├── exp-a-beat-detection/      ← Node.js proof of concept (WAV)
+│   ├── exp-b-uxp-viability/       ← Bundle source (esbuild) — WAV + MP3
+│   │   ├── src/
+│   │   │   ├── analysis.js        ← WAV + MP3 decode + resample + beat detection
+│   │   │   └── stubs/             ← Polyfills for UXP missing modules
+│   │   ├── build.js               ← esbuild config
+│   │   └── package.json
+│   └── exp-c-uxp-mp3viability/    ← MP3 viability POC (Node.js + mpg123-decoder)
 │       ├── src/
-│       │   ├── analysis.js        ← WAV decode + resample + beat detection
-│       │   └── stubs/             ← Polyfills for UXP missing modules
-│       ├── build.js               ← esbuild config
+│       │   ├── test-node.js       ← Node.js POC (mpg123-decoder)
+│       │   └── check-delay.js     ← Xing/LAME header inspector
 │       └── package.json
 │
 ├── screenshots/                   ← Usage screenshots
@@ -50,8 +55,8 @@ BeatMarker-PremierePlugin/
 
 ## How the plugin works
 
-1. User selects a `.WAV` clip in the Premiere Pro Project panel
-2. Clicks **ANALYZE SELECTED CLIP** → plugin reads the file via `fs.readFile`, decodes WAV in pure JS, resamples to 44100 Hz, runs `music-tempo` beat detection
+1. User selects a `.WAV` or `.MP3` clip in the Premiere Pro Project panel
+2. Clicks **ANALYZE SELECTED CLIP** → plugin reads the file via `fs.readFile`, detects format (WAV/MP3), decodes in pure JS, resamples to 44100 Hz, runs `music-tempo` beat detection
 3. Displays BPM, beat count, and a **confidence indicator** (coefficient of variation of beat intervals)
 4. User optionally toggles which beats to mark (1, 2, 3, 4) via clickable beat boxes
 5. Clicks **CREATE MARKERS ON CLIP** → plugin creates markers via Premiere's transaction API, colored by beat position
@@ -134,12 +139,15 @@ Phrases are Whiplash/music culture references — always displayed in English re
 | Runtime | UXP manifest v5 |
 | UI | HTML + CSS + vanilla JS |
 | WAV decoding | Pure JS (DataView) — PCM 8/16/24-bit + float32 |
+| MP3 decoding | `js-mp3` (pure JS, no WASM) — bundled via esbuild |
 | Beat detection | music-tempo |
 | Bundler | esbuild |
 | i18n | Auto-detected via `navigator.language` |
 
 ### Why no WASM / Web Workers / AudioContext
 All three crash or are unavailable in UXP. See `docs/DEVELOPMENT.md` section 3 and 9.
+
+> **v1.2 lesson:** `mpg123-decoder` (single-threaded WASM) still crashes Premiere Pro on analysis. The only safe MP3 decoder for UXP is `js-mp3` (100% pure JS).
 
 ---
 
@@ -162,7 +170,7 @@ All three crash or are unavailable in UXP. See `docs/DEVELOPMENT.md` section 3 a
   "manifestVersion": 5,
   "id": "8b52c087",
   "name": "BeatMarker",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "main": "index.html",
   "host": {
     "app": "premierepro",
@@ -213,10 +221,19 @@ copy analysis-bundle.js ..\..\plugin\analysis-bundle.js
 
 ## Known limitations
 
-- WAV only (4/4 time signature)
+- WAV and MP3 only (4/4 time signature)
 - No variable tempo support (rubato, ritardando)
 - Marker colors are fixed — no API to change them
 - Adobe Exchange submission blocked by `HOSTAPP_VERSION_INVALID` validation error (manifest format appears correct — may be an Exchange bug)
+
+---
+
+## v1.2.0 changelog
+
+- **MP3 support** — WAV and MP3 files both accepted; format auto-detected by magic bytes
+- **MP3 timing correction** — encoder delay read from Xing/LAME header; additional js-mp3 MDCT startup delay (2070 samples) stripped; calibrated to 0-frame offset vs mpg123-decoder reference
+- **Pure JS MP3 decoder** (`js-mp3`) — WASM-based decoders (including single-threaded `mpg123-decoder`) crash Premiere Pro; js-mp3 is the only viable approach in UXP
+- Updated UI hints and error messages to mention both formats
 
 ---
 
