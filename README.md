@@ -12,7 +12,7 @@
 
 ## ✨ Features
 
-- 🎵 **Detects BPM and beats** in WAV files with one click
+- 🎵 **Detects BPM and beats** in WAV and MP3 files with one click
 - 🎨 **Creates colored markers** on the source clip, visually distinguishing each beat position:
   - 🔴 Beat **1** → Red — **Downbeat** (strongest beat of the bar)
   - 🔵 Beats **2 & 4** → Blue — **Backbeats** (where the snare typically hits)
@@ -48,6 +48,17 @@ Video editors who cut to the beat — music videos, trailers, reels, sync edits.
 | **5** | Click **CREATE MARKERS ON CLIP** — colored markers appear on the clip |
 | **6** | If beat "1" is in the wrong place, use **◀ ▶** to shift the phase |
 | **7** | To start over, click **REMOVE MARKERS** |
+
+### ⌨️ Navigating markers in Premiere Pro
+
+Once markers are placed, use these standard Premiere shortcuts to jump between them:
+
+| Action | Windows | macOS |
+|--------|---------|-------|
+| **Next marker** | `Shift + M` | `Shift + M` |
+| **Previous marker** | `Ctrl + Shift + M` | `Cmd + Shift + M` |
+
+These shortcuts work both in the **Timeline** and inside a clip in the **Source Monitor**.
 
 <details>
 <summary>📸 View individual steps</summary>
