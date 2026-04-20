@@ -332,15 +332,21 @@
       margin-bottom: 16px;
     }
     .shortcuts-grid {
-      display: flex;
-      gap: 32px;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: auto 1fr 1fr;
+      gap: 8px 20px;
       margin-bottom: 12px;
+      align-items: center;
+    }
+    .shortcuts-header {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #555;
     }
     .shortcut-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      display: contents;
     }
     .shortcut-label {
       font-size: 13px;
@@ -356,6 +362,11 @@
       border-radius: 4px;
       padding: 3px 8px;
       letter-spacing: 0.5px;
+      justify-self: start;
+    }
+    .shortcut-mac {
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      letter-spacing: 0;
     }
     .shortcuts-note {
       font-size: 12px;
@@ -566,13 +577,18 @@
     <div class="shortcuts-box">
       <div class="shortcuts-title" data-en="⌨️ Navigate markers with keyboard shortcuts" data-pt="⌨️ Navegue pelos marcadores com atalhos de teclado">⌨️ Navigate markers with keyboard shortcuts</div>
       <div class="shortcuts-grid">
+        <span class="shortcuts-header"></span>
+        <span class="shortcuts-header">Windows</span>
+        <span class="shortcuts-header">macOS</span>
         <div class="shortcut-item">
           <span class="shortcut-label" data-en="Next marker" data-pt="Próximo marcador">Next marker</span>
           <span class="shortcut-keys">Shift + M</span>
+          <span class="shortcut-keys shortcut-mac">⇧ M</span>
         </div>
         <div class="shortcut-item">
           <span class="shortcut-label" data-en="Previous marker" data-pt="Marcador anterior">Previous marker</span>
-          <span class="shortcut-keys"><span data-en="Ctrl" data-pt="Ctrl">Ctrl</span> + Shift + M</span>
+          <span class="shortcut-keys">Ctrl + Shift + M</span>
+          <span class="shortcut-keys shortcut-mac">⌘ ⇧ M</span>
         </div>
       </div>
       <p class="shortcuts-note" data-en="Works in the Timeline and in the Source Monitor." data-pt="Funciona na Timeline e no Monitor de Origem.">Works in the Timeline and in the Source Monitor.</p>
