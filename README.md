@@ -186,7 +186,7 @@ The UI language is detected automatically from the system locale — no configur
 
 ## ⚠️ Known limitations
 
-- Only `.WAV` files are accepted (**4/4 time signature** only)
+- Only **4/4 time signature** is supported
 - No support for variable tempo (rubato, accelerando, ritardando)
 - Marker colors are fixed — 🔴 downbeat, 🔵 backbeats, 🟡 secondary downbeat. Premiere Pro does not expose a color picker API for markers created by plugins.
 

@@ -65,8 +65,8 @@ The panel can be docked anywhere in the interface, like any other Premiere panel
 **"The plugin doesn't appear in Window → Extensions"**
 Restart Premiere after installation. If it persists, confirm at **Help → About Premiere Pro** that your version is 25.0 or later.
 
-**"I can't analyze my MP3 file"**
-This version only supports **WAV** files. To convert an MP3 to WAV, use Premiere itself: **File → Export → Media**, choose WAV format, export, and import the result.
+**"I can't analyze my file"**
+BeatMarker supports **WAV** and **MP3** files. If your file is in another format, export it as WAV or MP3 first.
 
 **"Beat 1 is in the wrong place"**
 Use the **◀ ▶** buttons in the panel to adjust the phase. Each click shifts the numbering by one beat — the adjustment is instant, no need to re-analyze.
