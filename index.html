@@ -103,7 +103,10 @@
       margin-bottom: 12px;
     }
 
-    .hero h1 .beat { color: var(--red); }
+    .hero h1 .b  { color: var(--red); }
+    .hero h1 .e  { color: var(--blue); }
+    .hero h1 .a  { color: var(--yellow); }
+    .hero h1 .t  { color: var(--text); }
     .hero h1 .marker { color: var(--text); }
 
     .hero-tagline {
@@ -118,6 +121,17 @@
       font-size: 13px;
       color: #555;
       margin-bottom: 48px;
+    }
+
+    .hero-waveform {
+      margin-bottom: 20px;
+      max-width: 580px;
+      width: 100%;
+    }
+    .hero-waveform img {
+      width: 100%;
+      border-radius: 8px;
+      display: block;
     }
 
     .hero-beats {
@@ -136,17 +150,11 @@
       font-size: 20px;
       font-weight: 900;
       color: #fff;
-      animation: pulse 2s ease-in-out infinite;
     }
-    .beat-pill:nth-child(1) { background: var(--red); animation-delay: 0s; }
-    .beat-pill:nth-child(2) { background: var(--blue); animation-delay: 0.5s; }
-    .beat-pill:nth-child(3) { background: var(--yellow); animation-delay: 1s; }
-    .beat-pill:nth-child(4) { background: var(--blue); animation-delay: 1.5s; }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.08); opacity: 0.85; }
-    }
+    .beat-pill:nth-child(1) { background: var(--red); }
+    .beat-pill:nth-child(2) { background: var(--blue); }
+    .beat-pill:nth-child(3) { background: var(--yellow); }
+    .beat-pill:nth-child(4) { background: var(--blue); }
 
     .hero-cta {
       display: flex;
@@ -392,9 +400,12 @@
 <section class="hero">
   <div class="hero-bg"></div>
   <div class="hero-eyebrow">Free UXP Plugin · Adobe Premiere Pro</div>
-  <h1><span class="beat">Beat</span><span class="marker">Marker</span></h1>
+  <h1><span class="b">B</span><span class="e">e</span><span class="a">a</span><span class="t">t</span><span class="marker">Marker</span></h1>
   <p class="hero-tagline">Auto-detects BPM and places colored markers on your source clip. Cut to the beat — automatically.</p>
   <p class="hero-sub">No subscription. No account. No dependencies.</p>
+  <div class="hero-waveform">
+    <img src="screenshots/sample.png" alt="Waveform with beat markers" />
+  </div>
   <div class="hero-beats">
     <div class="beat-pill">1</div>
     <div class="beat-pill">2</div>
