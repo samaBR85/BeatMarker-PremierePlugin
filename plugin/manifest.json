@@ -1,15 +1,15 @@
 {
   "manifestVersion": 5,
-  "id": "com.beatmarker.plugin",
+  "id": "8b52c087",
   "name": "BeatMarker",
-  "version": "1.0.1",
+  "version": "1.2.0",
   "main": "index.html",
   "icons": [
     { "width": 512, "height": 512, "path": "icon.png", "scale": [ 1, 2 ], "theme": [ "dark", "light", "all" ] }
   ],
   "host": {
     "app": "premierepro",
-    "minVersion": "25.0.0"
+    "minVersion": "25.0"
   },
   "requiredPermissions": {
     "localFileSystem": "fullAccess",
