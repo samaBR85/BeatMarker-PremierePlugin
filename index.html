@@ -317,6 +317,51 @@
     .color-card .beat-label { font-size: 12px; color: var(--muted); margin-bottom: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
     .color-card p { font-size: 14px; color: var(--muted); }
 
+    /* ── SHORTCUTS BOX ── */
+    .shortcuts-box {
+      margin-top: 40px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+    }
+    .shortcuts-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .shortcuts-grid {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .shortcut-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .shortcut-label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .shortcut-keys {
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      color: var(--text);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 8px;
+      letter-spacing: 0.5px;
+    }
+    .shortcuts-note {
+      font-size: 12px;
+      color: #555;
+    }
+
     /* ── STEPS GUIDE ── */
     .guide-img {
       width: 100%;
@@ -499,7 +544,7 @@
       <div class="step">
         <div class="step-num">01</div>
         <h3 data-en="Select your clip" data-pt="Selecione o clipe">Select your clip</h3>
-        <p data-en="Pick any .WAV clip in the Premiere Pro Project panel." data-pt="Selecione qualquer clipe .WAV no painel de Projeto do Premiere Pro.">Pick any .WAV clip in the Premiere Pro Project panel.</p>
+        <p data-en="Pick any .WAV or .MP3 clip in the Premiere Pro Project panel." data-pt="Selecione qualquer clipe .WAV ou .MP3 no painel de Projeto do Premiere Pro.">Pick any .WAV or .MP3 clip in the Premiere Pro Project panel.</p>
       </div>
       <div class="step">
         <div class="step-num">02</div>
@@ -516,6 +561,21 @@
         <h3 data-en="Cut" data-pt="Cortar">Cut</h3>
         <p data-en="Open the clip in the Source Monitor and cut to the beat with a visual grid." data-pt="Abra o clipe no Monitor de Origem e corte no beat com uma grade visual.">Open the clip in the Source Monitor and cut to the beat with a visual grid.</p>
       </div>
+    </div>
+
+    <div class="shortcuts-box">
+      <div class="shortcuts-title" data-en="⌨️ Navigate markers with keyboard shortcuts" data-pt="⌨️ Navegue pelos marcadores com atalhos de teclado">⌨️ Navigate markers with keyboard shortcuts</div>
+      <div class="shortcuts-grid">
+        <div class="shortcut-item">
+          <span class="shortcut-label" data-en="Next marker" data-pt="Próximo marcador">Next marker</span>
+          <span class="shortcut-keys">Shift + M</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label" data-en="Previous marker" data-pt="Marcador anterior">Previous marker</span>
+          <span class="shortcut-keys"><span data-en="Ctrl" data-pt="Ctrl">Ctrl</span> + Shift + M</span>
+        </div>
+      </div>
+      <p class="shortcuts-note" data-en="Works in the Timeline and in the Source Monitor." data-pt="Funciona na Timeline e no Monitor de Origem.">Works in the Timeline and in the Source Monitor.</p>
     </div>
 
     <img class="guide-img" src="screenshots/step-by-step_guide.png" alt="Step by step guide" />
@@ -538,7 +598,7 @@
         <ul class="install-reqs">
           <li data-en="Adobe Premiere Pro 25.0 or later"   data-pt="Adobe Premiere Pro 25.0 ou superior">Adobe Premiere Pro 25.0 or later</li>
           <li data-en="Windows or macOS"                   data-pt="Windows ou macOS">Windows or macOS</li>
-          <li data-en="WAV audio files (4/4 time)"         data-pt="Arquivos de áudio WAV (compasso 4/4)">WAV audio files (4/4 time)</li>
+          <li data-en="WAV or MP3 audio files (4/4 time)"   data-pt="Arquivos de áudio WAV ou MP3 (compasso 4/4)">WAV or MP3 audio files (4/4 time)</li>
           <li data-en="No additional software required"    data-pt="Nenhum software adicional necessário">No additional software required</li>
           <li data-en="Free &amp; open source (GPL v3)"    data-pt="Gratuito e open source (GPL v3)">Free &amp; open source (GPL v3)</li>
         </ul>
