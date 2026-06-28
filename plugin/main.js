@@ -43,6 +43,7 @@ const STRINGS = {
     errCastFail:    'Não foi possível converter para ClipProjectItem.',
     errFormat:      ext => `Formato não suportado: ${ext}. Use .WAV ou .MP3.`,
     errNoMarkers:   'Não foi possível obter markers do clip.',
+    errCreateFailed:'Nenhum marker foi criado. Atualize o Premiere ou reinstale o plugin.',
     errNoAccess:    'Não foi possível acessar o clip.',
     errNoDelete:    'Erro: método de delete não encontrado',
     errBundle:      'Erro: bundle não carregado',
@@ -136,6 +137,7 @@ const STRINGS = {
     errCastFail:    'Could not convert to ClipProjectItem.',
     errFormat:      ext => `Unsupported format: ${ext}. Use .WAV or .MP3.`,
     errNoMarkers:   'Could not get clip markers.',
+    errCreateFailed:'No markers were created. Update Premiere or reinstall the plugin.',
     errNoAccess:    'Could not access clip.',
     errNoDelete:    'Error: delete method not found',
     errBundle:      'Error: bundle not loaded',
@@ -375,6 +377,23 @@ try {
   setStatus(T.errBundle, 'fail');
 }
 
+// ── Helper de transação (compatível com Premiere 2025 e 2026) ───────────────────
+// PPro 2026+: mutações precisam rodar dentro de um lockedAccess síncrono, senão a
+//             transação é um no-op silencioso (markers nunca aparecem, sem erro).
+// PPro 2025 : comportamento original com executeTransaction assíncrono (inalterado).
+async function runTransaction(project, buildActions, label) {
+  if (typeof project.lockedAccess === 'function') {
+    // 2026+: lockedAccess recebe um callback SÍNCRONO; executeTransaction retorna boolean.
+    let success = false;
+    project.lockedAccess(() => {
+      success = project.executeTransaction(buildActions, label);
+    });
+    return success;
+  }
+  // 2025: exatamente como antes.
+  return await project.executeTransaction(buildActions, label);
+}
+
 // ── BOTÃO: Analisar ───────────────────────────────────────────────────────────
 btnAnalyze.onclick = async () => {
   if (!analyzeAudio) { setStatus(T.errBundle, 'fail'); return; }
@@ -484,7 +503,7 @@ btnApply.onclick = async () => {
       const BATCH_DEL = 50;
       for (let b = 0; b < existingBM.length; b += BATCH_DEL) {
         const slice = existingBM.slice(b, b + BATCH_DEL);
-        await project.executeTransaction(async (ca) => {
+        await runTransaction(project, (ca) => {
           for (const m of slice) {
             const action = getDeleteAction(clipMarkers, m);
             if (action) ca.addAction(action);
@@ -497,13 +516,14 @@ btnApply.onclick = async () => {
       .map((t, i) => ({ t, globalIdx: i, pos: ((i + offset) % 4) + 1 }))
       .filter(({ pos }) => activeBeats.has(pos));
 
+    const MARKER_TYPE_COMMENT = (ppro.Marker && ppro.Marker.MARKER_TYPE_COMMENT) || 'Comment';
     const BATCH = 50;
     for (let b = 0; b < beatsWithPos.length; b += BATCH) {
       const slice = beatsWithPos.slice(b, b + BATCH);
-      await project.executeTransaction(async (ca) => {
+      await runTransaction(project, (ca) => {
         for (const { t, globalIdx } of slice) {
           ca.addAction(clipMarkers.createAddMarkerAction(
-            '[BM] ' + globalIdx, 'Comment',
+            '[BM] ' + globalIdx, MARKER_TYPE_COMMENT,
             ppro.TickTime.createWithSeconds(t),
             ppro.TickTime.createWithSeconds(0),
             'beatmarker'
@@ -512,12 +532,16 @@ btnApply.onclick = async () => {
       }, 'BeatMarker create ' + (b / BATCH + 1));
     }
 
+    // Re-lê os markers realmente criados (não confia na contagem da análise).
     const allMarkers = await clipMarkers.getMarkers();
     const bmMarkers  = allMarkers.filter(m => m.getName && m.getName().startsWith('[BM]'));
 
+    // Se nada foi criado, a transação falhou silenciosamente (ex.: API sem lockedAccess).
+    if (bmMarkers.length === 0) throw new Error(T.errCreateFailed);
+
     for (let b = 0; b < bmMarkers.length; b += BATCH) {
       const slice = bmMarkers.slice(b, b + BATCH);
-      await project.executeTransaction(async (ca) => {
+      await runTransaction(project, (ca) => {
         for (let i = 0; i < slice.length; i++) {
           const globalIdx = parseInt((slice[i].getName ? slice[i].getName() : '').replace('[BM] ', '')) || 0;
           const beatPos = ((globalIdx + offset) % 4) + 1;
@@ -527,8 +551,8 @@ btnApply.onclick = async () => {
       }, 'BeatMarker colors ' + (b / BATCH + 1));
     }
 
-    log(T.logCreated(beats.length, bpm.toFixed(1)), 'ok');
-    setStatus(T.statusCreated(beats.length), 'ok');
+    log(T.logCreated(bmMarkers.length, bpm.toFixed(1)), 'ok');
+    setStatus(T.statusCreated(bmMarkers.length), 'ok');
     btnClear.disabled = false;
     btnPrev.disabled  = false;
     btnNext.disabled  = false;
@@ -567,7 +591,7 @@ async function recolorMarkers() {
   const BATCH = 50;
   for (let b = 0; b < bmMarkers.length; b += BATCH) {
     const slice = bmMarkers.slice(b, b + BATCH);
-    await project.executeTransaction(async (ca) => {
+    await runTransaction(project, (ca) => {
       for (let i = 0; i < slice.length; i++) {
         let beatPos;
         if (selective) {
@@ -655,7 +679,7 @@ btnClear.onclick = async () => {
     let removed = 0;
     for (let b = 0; b < bmMarkers.length; b += BATCH) {
       const slice = bmMarkers.slice(b, b + BATCH);
-      await project.executeTransaction(async (ca) => {
+      await runTransaction(project, (ca) => {
         for (const m of slice) {
           const action = getDeleteAction(clipMarkers, m);
           if (action) { ca.addAction(action); removed++; }
