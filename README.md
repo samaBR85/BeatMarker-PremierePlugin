@@ -205,4 +205,4 @@ This project is licensed under the **GNU GPL v3** — any derivative work must a
 ## 👤 Credits
 
 Created by **[samaBR](https://github.com/samaBR85)**
-buy me a coffe on ![ko-fi](https://ko-fi.com/E5N7227AO5)
+buy me a coffe on [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/E5N7227AO5)
