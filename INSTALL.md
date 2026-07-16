@@ -14,7 +14,7 @@ Step-by-step guide to install BeatMarker in Adobe Premiere Pro.
 
 ### 1. Download the plugin
 
-Go to the [Releases page](https://github.com/samaBR85/BeatMarker-PremierePlugin/releases) and download the `.ccx` file from the latest release.
+Go to the **Releases** page of this repository and download the `.ccx` file from the latest release.
 
 ### 2. Close Premiere Pro
 
