@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#141414"/>
+  <!-- beat bars: red downbeat, blue backbeats, yellow beat 3 -->
+  <rect x="5"  y="9"  width="4.5" height="17" rx="2.25" fill="#d53a3a"/>
+  <rect x="11.5" y="14" width="4.5" height="12" rx="2.25" fill="#4084e5"/>
+  <rect x="18" y="11" width="4.5" height="15" rx="2.25" fill="#d7ab2f"/>
+  <rect x="24.5" y="16" width="4.5" height="10" rx="2.25" fill="#4084e5"/>
+</svg>
